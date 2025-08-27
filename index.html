@@ -1,8 +1,19 @@
 <html>
-<head>
-<meta name="Open Work Orders">
-</head>
-<table border=1 rules=all>
+<body>
+<style>
+/* Sortable tables */
+table.sortable thead {
+    background-color:#eee;
+    color:#666666;
+    font-weight: bold;
+    cursor: default;
+}
+</style>
+<!-- <script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script> -->
+<script src="sorttable.js"></script>
+   
+<h1 align="center">Open Work Orders</h1>
+<table border=1 rules=all cellpadding="5px" align="center" class="sortable">
 <tr><th>Date</th><th>Ticket #</th><th>Author</th><th>Assigned To</th><th>Status</th><th>Last Reply</th><th>Overdue</th></tr>
 <tr><td>8/26/2025</td><td><a href="#" onClick="MyWindow=window.open('https://www.avalon-estates.com/forms/?view=staffedit&id=3179&tic=KK38269','MyWindow','width=600,height=600'); return false;">KK38269</a></td><td>Moshe Ben-Maier</td><td>Kristine Russo Diaz</td><td>In Progress</td><td>7 hours ago By Staff (1)</td><td></td></tr>
 <tr><td>8/26/2025</td><td><a href="#" onClick="MyWindow=window.open('https://www.avalon-estates.com/forms/?view=staffedit&id=3177&tic=GB95496','MyWindow','width=600,height=600'); return false;">GB95496</a></td><td>John Fazzino</td><td>Kristine Russo Diaz</td><td>New</td><td>10 hours ago By Staff (1)</td><td></td></tr>
@@ -74,5 +85,8 @@
 <tr><td>1/17/2025</td><td><a href="#" onClick="MyWindow=window.open('https://www.avalon-estates.com/forms/?view=staffedit&id=2529&tic=LK55987','MyWindow','width=600,height=600'); return false;">LK55987</a></td><td>Ken Levenbook</td><td>Patti Dennis</td><td>In Progress</td><td>02/13/2025 By Staff (3)</td><td>** Overdue 6 months ago **</td></tr>
 <tr><td>1/7/2025</td><td><a href="#" onClick="MyWindow=window.open('https://www.avalon-estates.com/forms/?view=staffedit&id=2492&tic=ZP77869','MyWindow','width=600,height=600'); return false;">ZP77869</a></td><td>Doug Hague</td><td>Patti Dennis</td><td>In Progress</td><td>03/15/2025 By Staff (4)</td><td>** Overdue 7 months ago **</td></tr>
 </table>
+</body>
 </html>
+
+
 

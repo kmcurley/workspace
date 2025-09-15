@@ -1,0 +1,7 @@
+workorder_id,service_type,status,due_date,technician,creation_date
+101,Plumbing,In Progress,03/15/2024,John Smith,03/10/2024
+102,Electrical,Completed,03/12/2024,Jane Doe,03/09/2024
+103,HVAC,Pending,03/20/2024,John Smith,03/11/2024
+104,Plumbing,Completed,03/18/2024,Peter Jones,03/12/2024
+105,Electrical,In Progress,03/25/2024,Jane Doe,03/14/2024
+106,HVAC,Pending,03/22/2024,Peter Jones,03/15/2024

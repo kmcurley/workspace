@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Table Viewer</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        details summary {
+            cursor: pointer;
+        }
+        details summary::marker {
+            content: '+ ';
+        }
+        details[open] summary::marker {
+            content: '− ';
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+
+    <div id="app" class="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800" id="header-title">Data for File: "workorders.csv"</h1>
+        </header>
+
+        <details open class="bg-gray-50 rounded-lg p-4 mb-8 border border-gray-200">
+            <summary class="text-xl font-semibold text-gray-700 py-2">
+                Table Controls
+            </summary>
+            
+            <form id="control-form" class="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Column 1: Files -->
+                <div class="col-span-1 bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">Select File</h3>
+                    <div id="file-list" class="space-y-1 max-h-48 overflow-y-auto pr-2">
+                        <!-- File links will be populated here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Column 2: Columns -->
+                <div class="col-span-1 bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">Columns to Display</h3>
+                    <div class="flex items-center space-x-2 mb-2">
+                        <input type="checkbox" id="select-all-cols" class="rounded text-blue-600 focus:ring-blue-500">
+                        <label for="select-all-cols" class="text-gray-700">Select All Columns</label>
+                    </div>
+                    <div id="column-list" class="space-y-1 max-h-48 overflow-y-auto pr-2">
+                        <!-- Column checkboxes will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Column 3: Sort & Search -->
+                <div class="col-span-1 bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-medium text-gray-800 mb-4">Sort & Search</h3>
+
+                    <h4 class="text-base font-medium text-gray-700 mb-2">Sort By</h4>
+                    <div id="sort-fields" class="space-y-2">
+                        <!-- Sort fields will be populated here -->
+                    </div>
+                    <div class="flex space-x-2 mt-2">
+                        <button type="button" onclick="addSortField()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">+ Add Sort</button>
+                        <button type="button" onclick="clearFields('sort-fields')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">Clear Sort</button>
+                    </div>
+
+                    <h4 class="text-base font-medium text-gray-700 mt-4 mb-2">Search By (Max 4)</h4>
+                    <div id="search-fields" class="space-y-2">
+                        <!-- Search fields will be populated here -->
+                    </div>
+                    <div class="flex space-x-2 mt-2">
+                        <button type="button" onclick="addSearchField()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">+ Add Search</button>
+                        <button type="button" onclick="clearFields('search-fields')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">Clear Search</button>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-200 mt-4">
+                        Apply Changes
+                    </button>
+                </div>
+            </form>
+        </details>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Table Data</h2>
+        <div id="table-container" class="bg-white rounded-lg shadow-lg overflow-x-auto">
+            <p id="loading-message" class="p-6 text-center text-gray-500">Loading data...</p>
+            <table class="min-w-full divide-y divide-gray-200 hidden" id="data-table">
+                <thead class="bg-gray-50">
+                    <tr id="table-header">
+                        <!-- Table headers will be populated here -->
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="table-body">
+                    <!-- Table rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_FILE = 'workorders.csv';
+        const AVAILABLE_FILES = ['workorders.csv', 'another_file.csv', 'sample.csv'];
+        const MOCK_CSV_DATA = {
+            'workorders.csv': `workorder_id,service_type,status,due_date,technician,creation_date
+101,Plumbing,In Progress,03/15/2024,John Smith,03/10/2024
+102,Electrical,Completed,03/12/2024,Jane Doe,03/09/2024
+103,HVAC,Pending,03/20/2024,John Smith,03/11/2024
+104,Plumbing,Completed,03/18/2024,Peter Jones,03/12/2024
+105,Electrical,In Progress,03/25/2024,Jane Doe,03/14/2024
+106,HVAC,Pending,03/22/2024,Peter Jones,03/15/2024`,
+            'another_file.csv': `task_id,task_name,priority,start_date,end_date
+201,Fix leak,High,01/05/2024,01/06/2024
+202,Install outlet,Medium,01/10/2024,01/10/2024
+203,Inspect HVAC,Low,01/15/2024,01/15/2024`,
+            'sample.csv': `id,product,price,ship_date
+A1,Laptop,1200,02/01/2024
+A2,Mouse,25,02/02/2024
+A3,Keyboard,75,02/03/2024`
+        };
+
+
+        let allColumns = [];
+        let rawData = [];
+        let currentFile = '';
+
+        // --- Utility Functions ---
+
+        /**
+         * Parses a CSV string into an array of objects.
+         * @param {string} csvText The raw CSV string.
+         * @returns {Array<Object>} An array of objects representing the data.
+         */
+        function parseCsv(csvText) {
+            const lines = csvText.trim().split('\n');
+            if (lines.length === 0) return [];
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                if (values.length === headers.length) {
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index];
+                    });
+                    data.push(row);
+                }
+            }
+            return data;
+        }
+
+        /**
+         * Converts date strings in a specified format for sorting.
+         * @param {string} dateString The date string in mm/dd/yyyy format.
+         * @returns {string} The converted date string in yyyy-mm-dd format.
+         */
+        function convertDateFormat(dateString) {
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                const [month, day, year] = parts;
+                return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+            return dateString;
+        }
+
+        /**
+         * Filters and sorts the data based on user controls.
+         * @param {Array<Object>} data The data to filter and sort.
+         * @param {Object} params The URL search parameters.
+         * @returns {Array<Object>} The filtered and sorted data.
+         */
+        function filterAndSortData(data, params) {
+            let filteredData = [...data];
+
+            // Filter data
+            const searchCols = params.getAll('search_col');
+            const searchOps = params.getAll('search_op');
+            const searchVals = params.getAll('search_val');
+
+            for (let i = 0; i < searchCols.length && i < 4; i++) {
+                const col = searchCols[i];
+                const op = searchOps[i];
+                const val = searchVals[i];
+
+                if (col && val) {
+                    filteredData = filteredData.filter(row => {
+                        const cellValue = String(row[col]).toLowerCase();
+                        const searchTerm = String(val).toLowerCase();
+
+                        if (op === 'equal') {
+                            return cellValue === searchTerm;
+                        } else if (op === 'like') {
+                            return cellValue.includes(searchTerm);
+                        }
+                        return true;
+                    });
+                }
+            }
+
+            // Sort data
+            const sortCols = params.getAll('sort_col');
+            const sortOrders = params.getAll('sort_order');
+
+            if (sortCols.length > 0) {
+                filteredData.sort((a, b) => {
+                    for (let i = 0; i < sortCols.length; i++) {
+                        const col = sortCols[i];
+                        const order = sortOrders[i] || 'asc';
+
+                        if (a[col] !== b[col]) {
+                            const valA = String(a[col]).toLowerCase();
+                            const valB = String(b[col]).toLowerCase();
+
+                            if (valA < valB) {
+                                return order === 'asc' ? -1 : 1;
+                            }
+                            if (valA > valB) {
+                                return order === 'asc' ? 1 : -1;
+                            }
+                        }
+                    }
+                    return 0;
+                });
+            }
+
+            return filteredData;
+        }
+
+        // --- DOM Rendering Functions ---
+
+        /**
+         * Renders the list of available CSV files.
+         * @param {string} currentFile The currently selected file.
+         */
+        function renderFileList(currentFile) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = AVAILABLE_FILES.map(file => `
+                <a href="?table=${encodeURIComponent(file)}" class="block px-3 py-1 rounded-md transition duration-150 ${file === currentFile ? 'bg-blue-600 text-white' : 'text-blue-600 hover:bg-gray-200'}">
+                    ${file}
+                </a>
+            `).join('');
+        }
+
+        /**
+         * Renders the column checkboxes.
+         * @param {Array<string>} allCols All column names.
+         * @param {Array<string>} selectedCols The selected column names.
+         */
+        function renderColumnList(allCols, selectedCols) {
+            const columnList = document.getElementById('column-list');
+            columnList.innerHTML = allCols.map(col => `
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" name="cols[]" value="${col}" class="rounded text-blue-600 focus:ring-blue-500" ${selectedCols.includes(col) ? 'checked' : ''}>
+                    <span class="text-gray-700">${col}</span>
+                </label>
+            `).join('');
+            document.getElementById('select-all-cols').checked = allCols.length > 0 && selectedCols.length === allCols.length;
+        }
+
+        /**
+         * Renders the dynamic sort fields.
+         * @param {Array<string>} sortCols The existing sort columns.
+         * @param {Array<string>} sortOrders The existing sort orders.
+         */
+        function renderSortFields(sortCols, sortOrders) {
+            const sortFields = document.getElementById('sort-fields');
+            sortFields.innerHTML = '';
+            for (let i = 0; i < sortCols.length; i++) {
+                addSortField(sortCols[i], sortOrders[i]);
+            }
+        }
+
+        /**
+         * Renders the dynamic search fields.
+         * @param {Array<string>} searchCols The existing search columns.
+         * @param {Array<string>} searchOps The existing search operators.
+         * @param {Array<string>} searchVals The existing search values.
+         */
+        function renderSearchFields(searchCols, searchOps, searchVals) {
+            const searchFields = document.getElementById('search-fields');
+            searchFields.innerHTML = '';
+            for (let i = 0; i < searchCols.length && i < 4; i++) {
+                addSearchField(searchCols[i], searchOps[i], searchVals[i]);
+            }
+        }
+
+        /**
+         * Renders the data table.
+         * @param {Array<Object>} data The data to display.
+         * @param {Array<string>} selectedCols The columns to display.
+         */
+        function renderTable(data, selectedCols) {
+            const tableContainer = document.getElementById('table-container');
+            const table = document.getElementById('data-table');
+            const headerRow = document.getElementById('table-header');
+            const body = document.getElementById('table-body');
+            const loadingMessage = document.getElementById('loading-message');
+
+            if (data.length === 0 || selectedCols.length === 0) {
+                loadingMessage.textContent = 'No data found or no columns selected.';
+                loadingMessage.classList.remove('hidden');
+                table.classList.add('hidden');
+                return;
+            }
+
+            loadingMessage.classList.add('hidden');
+            table.classList.remove('hidden');
+
+            // Render table header
+            headerRow.innerHTML = selectedCols.map(col => `
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${col}</th>
+            `).join('');
+
+            // Render table body
+            body.innerHTML = data.map(row => {
+                const cells = selectedCols.map(col => `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${row[col] || ''}</td>
+                `).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
+        }
+        
+        // --- Dynamic Field Add/Remove Functions ---
+        
+        function addSortField(col = '', order = 'asc') {
+            const container = document.getElementById('sort-fields');
+            const newRow = document.createElement('div');
+            newRow.className = 'flex items-center space-x-2';
+            newRow.innerHTML = `
+                <select name="sort_col[]" class="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
+                    <option value="">- Select Column -</option>
+                    ${allColumns.map(c => `<option value="${c}" ${c === col ? 'selected' : ''}>${c}</option>`).join('')}
+                </select>
+                <select name="sort_order[]" class="form-select mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
+                    <option value="asc" ${order === 'asc' ? 'selected' : ''}>ASC</option>
+                    <option value="desc" ${order === 'desc' ? 'selected' : ''}>DESC</option>
+                </select>
+                <button type="button" onclick="this.parentNode.remove()" class="text-red-500 hover:text-red-700 text-lg font-bold transition duration-200">
+                    &times;
+                </button>
+            `;
+            container.appendChild(newRow);
+        }
+
+        function addSearchField(col = '', op = 'like', val = '') {
+            const container = document.getElementById('search-fields');
+            if (container.children.length >= 4) return;
+            const newRow = document.createElement('div');
+            newRow.className = 'flex items-center space-x-2';
+            newRow.innerHTML = `
+                <select name="search_col[]" class="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
+                    <option value="">- Select Column -</option>
+                    ${allColumns.map(c => `<option value="${c}" ${c === col ? 'selected' : ''}>${c}</option>`).join('')}
+                </select>
+                <select name="search_op[]" class="form-select mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
+                    <option value="equal" ${op === 'equal' ? 'selected' : ''}>=</option>
+                    <option value="like" ${op === 'like' ? 'selected' : ''}>contains</option>
+                </select>
+                <input type="text" name="search_val[]" value="${val}" placeholder="Value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
+                <button type="button" onclick="this.parentNode.remove()" class="text-red-500 hover:text-red-700 text-lg font-bold transition duration-200">
+                    &times;
+                </button>
+            `;
+            container.appendChild(newRow);
+        }
+
+        function clearFields(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+        }
+        
+        // --- Main Initialization Function ---
+        
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            currentFile = params.get('table') || DEFAULT_FILE;
+            document.getElementById('header-title').textContent = `Data for File: "${currentFile}"`;
+            
+            // Show loading message
+            document.getElementById('loading-message').classList.remove('hidden');
+            document.getElementById('data-table').classList.add('hidden');
+
+            try {
+                // Get CSV data from mock source instead of a fetch call
+                const csvText = MOCK_CSV_DATA[currentFile];
+                if (!csvText) {
+                    throw new Error(`The file '${currentFile}' is not a valid mock file.`);
+                }
+                
+                rawData = parseCsv(csvText);
+
+                // Check for date columns and convert their format
+                rawData.forEach(row => {
+                    for (const key in row) {
+                        if (key.toLowerCase().includes('date')) {
+                            row[key] = convertDateFormat(row[key]);
+                        }
+                    }
+                });
+
+                allColumns = rawData.length > 0 ? Object.keys(rawData[0]) : [];
+
+                // Get selected columns from URL, or default to all
+                const selectedCols = params.getAll('cols').length > 0 ? params.getAll('cols') : allColumns;
+                const sortedAndFilteredData = filterAndSortData(rawData, params);
+
+                // Render all components
+                renderFileList(currentFile);
+                renderColumnList(allColumns, selectedCols);
+                renderSortFields(params.getAll('sort_col'), params.getAll('sort_order'));
+                renderSearchFields(params.getAll('search_col'), params.getAll('search_op'), params.getAll('search_val'));
+                renderTable(sortedAndFilteredData, selectedCols);
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('loading-message').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // --- Event Listeners ---
+
+        document.getElementById('select-all-cols').addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('#column-list input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+        });
+
+        // Initialize the app on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+

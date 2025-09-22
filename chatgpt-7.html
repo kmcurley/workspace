@@ -550,7 +550,7 @@ function renderFileList(){
       const selectedFile = event.target.dataset.file;
       console.log(`Loading file: ${selectedFile}`);
       // Call a function to load the selected CSV file, e.g., loadCsvFile(selectedFile);
-	  tryAutoLoadTable(selectedFile)
+	  tryAutoLoadTable(selectedFile);
     });  
     fl.appendChild(el);
   });
@@ -1148,6 +1148,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 
 
 

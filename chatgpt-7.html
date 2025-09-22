@@ -388,7 +388,7 @@ function makeComparator(sortDefs, columnIndexMap, dateColumnSet){
 
 // ----------------- App State -----------------
 let state = {
-  tableParam: getUrlParam('table') || 'another_file',
+  tableParam: getUrlParam('table') || 'workorders',
   csvUrl: null,
   rawText: null,
   header: [],
@@ -504,7 +504,7 @@ function wireUI(){
 function tryFetchCsvList(){
  console.log('tryFetchCsvList:');
  if ('1' == '1' ) {
-	state.availableFiles = ['another_file.csv','sample.csv','OpenWorkOrder-2025-09-22.csv'];
+	state.availableFiles = ['another_file.csv','sample.csv','workorders.csv'];
 	console.log(`state.availablefiles(${state.availablefiles})`);
 	renderFileList();
   } else {
@@ -1148,6 +1148,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 
 
 

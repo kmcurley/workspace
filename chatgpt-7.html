@@ -538,12 +538,12 @@ function renderFileList(){
   state.availableFiles.forEach(fname=>{
     const el = document.createElement('div');
     //el.style.padding='2px';
-	el.style.font = '12px';
+	el.style.font = '8px';
     el.style.borderBottom='1px dashed #eef2f6';
     el.style.cursor='pointer';
     el.dataset.file = fname;
     //el.innerHTML = `<strong>${escapeHtml(fname)}</strong> <div class="small-muted">click to load</div>`;
-	el.innerHTML = `${escapeHtml(fname)} (click to load)`;
+	el.innerHTML = `${escapeHtml(fname)} <span class="small-muted">(click to load)/span>`;
 	// Add the click event listener here
     el.addEventListener('click', (event) => {
       const selectedFile = event.target.dataset.file;
@@ -1147,6 +1147,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 
 
 

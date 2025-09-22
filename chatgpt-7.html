@@ -503,8 +503,8 @@ function wireUI(){
 // ----------------- CSV file list attempt -----------------
 function tryFetchCsvList(){
  console.log('tryFetchCsvList:');
- if ('1' == '2' ) {
-	state.availableFiles = ['webmaster.csv','webmaster-O.csv','webmaster-1.csv','webmaster-2.csv','workorders.csv'];
+ if ('1' == 1' ) {
+	state.availableFiles = ['another_file.csv','sample.csv'];
 	console.log(`state.availablefiles(${state.availablefiles})`);
 	renderFileList();
   } else {
@@ -544,6 +544,13 @@ function renderFileList(){
     el.dataset.file = fname;
     //el.innerHTML = `<strong>${escapeHtml(fname)}</strong> <div class="small-muted">click to load</div>`;
 	el.innerHTML = `${escapeHtml(fname)} (click to load)`;
+	// Add the click event listener here
+    el.addEventListener('click', (event) => {
+      const selectedFile = event.target.dataset.file;
+      console.log(`Loading file: ${selectedFile}`);
+      // Call a function to load the selected CSV file, e.g., loadCsvFile(selectedFile);
+	  tryAutoLoadTable(selectedFile)
+    });  
     fl.appendChild(el);
   });
 }
@@ -1140,4 +1147,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 

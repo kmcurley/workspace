@@ -503,7 +503,7 @@ function wireUI(){
 // ----------------- CSV file list attempt -----------------
 function tryFetchCsvList(){
   // assume server may provide /csv-list.json (array of strings)
-  fetch('csv-list.json').then(r=>{
+  fetch('/workspace/csv-list.json').then(r=>{
     if(!r.ok) throw new Error('no csv-list');
     return r.json();
   }).then(list=>{
@@ -1126,4 +1126,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 

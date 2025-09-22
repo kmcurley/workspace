@@ -503,7 +503,7 @@ function wireUI(){
 // ----------------- CSV file list attempt -----------------
 function tryFetchCsvList(){
  console.log('tryFetchCsvList:');
- if ('1' == '1' ) {
+ if ('1' == '2' ) {
 	state.availableFiles = ['another_file.csv','sample.csv'];
 	console.log(`state.availablefiles(${state.availablefiles})`);
 	renderFileList();
@@ -523,7 +523,7 @@ function tryFetchCsvList(){
   }).catch(err=>{
     // fallback: show input only; update message
     const fl = qs('#file-list');
-    fl.innerHTML = `<div class="small-muted">No /csv-list.json available (or fetch failed). Use paste or local-file below.</div>`;
+    fl.innerHTML = `<div class="small-muted">No /workspace/csv-list.json available (or fetch failed). Use paste or local-file below.</div>`;
   });
   }
 }
@@ -1147,6 +1147,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 
 
 

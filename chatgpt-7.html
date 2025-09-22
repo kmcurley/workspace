@@ -1121,7 +1121,7 @@ function renderTable(){
 			// Append the link to the cell
 			td.appendChild(link);
          } else {   
-           if ("Link" == colName){
+           if ("Link" == colName || "href" == colName ){
               	td.innerHTML = "<a href='" + displayVal + "'  target='_blank'>Edit Ticket</a>";	   
 			  } else {		
 				td.innerHTML = escapeHtml(displayVal == null ? '' : String(displayVal));
@@ -1148,6 +1148,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 
 
 

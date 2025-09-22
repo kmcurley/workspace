@@ -511,6 +511,7 @@ function tryFetchCsvList(){
   // assume server may provide /csv-list.json (array of strings)
   console.log('tryFetchCsvList: Fetch');
   fetch('/workspace/csv-list.json').then(r=>{
+	console.log(`r.ok=${r.ok}`);  
     if(!r.ok) throw new Error('no csv-list');
     return r.json();
   }).then(list=>{
@@ -1139,3 +1140,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+

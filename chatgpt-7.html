@@ -544,7 +544,7 @@ function renderFileList(){
     el.style.cursor='pointer';
     el.dataset.file = fname;
     //el.innerHTML = `<strong>${escapeHtml(fname)}</strong> <div class="small-muted">click to load</div>`;
-	el.innerHTML = `<span class="small-note" style="color:blue">${escapeHtml(fname)}</span>`;
+	el.innerHTML = `${escapeHtml(fname)}`;
 	// Add the click event listener here
     el.addEventListener('click', (event) => {
       const selectedFile = event.target.dataset.file;
@@ -1148,6 +1148,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 
 
 

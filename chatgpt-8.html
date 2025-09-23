@@ -525,7 +525,7 @@ function tryFetchCsvList(){
  const jsonName = 'csv-list.json';
  if ( fullUrl.toLowerCase().startsWith("http") && fullUrl.toLowerCase().includes("/workspace/") ) {
 		// looks like we are using the workspace sever so set name 
-		jsonName = '/workspace/csv-list.json';
+		let jsonName = '/workspace/csv-list.json';
 	}
  if ( fullUrl.toLowerCase().startsWith("file:") ) {
 	// if we loaded html from a file the CORS policy won't allow local file access
@@ -1169,3 +1169,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+

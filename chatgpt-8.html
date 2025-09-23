@@ -522,7 +522,7 @@ function wireUI(){
 // ----------------- CSV file list attempt -----------------
 function tryFetchCsvList(){
  console.log('tryFetchCsvList:');
- const jsonName = 'csv-list.json';
+ let jsonName = 'csv-list.json';
  if ( fullUrl.toLowerCase().startsWith("http") && fullUrl.toLowerCase().includes("/workspace/") ) {
 		// looks like we are using the workspace sever so set name 
 		let jsonName = '/workspace/csv-list.json';
@@ -1169,4 +1169,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 

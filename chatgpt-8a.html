@@ -1144,7 +1144,7 @@ function renderTable(){
         }
         const td = document.createElement('td');
 		//td.innerHTML = escapeHtml(displayVal == null ? '' : String(displayVal));
-		if("Ticket" == colName){
+		if("Ticket" == colName || "Ticket #" == colName){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
 			const link = document.createElement('a');
@@ -1160,7 +1160,7 @@ function renderTable(){
 			// Append the link to the cell
 			td.appendChild(link);
          } else {   
-           if ("Link" == colName ){
+           if ("Link" == colName || "href" == colName){
               	td.innerHTML = "<a href='" + displayVal + "'  target='_blank'>Edit Ticket</a>";	   
 			  } else {		
 				td.innerHTML = escapeHtml(displayVal == null ? '' : String(displayVal));
@@ -1187,3 +1187,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+

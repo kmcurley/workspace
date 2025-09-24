@@ -564,6 +564,7 @@ function renderFileList() {
   state.availableFiles.forEach(fname => {
     const el = document.createElement('div');
     el.classList.add('file-item');
+    el.dataset.file = fname;
     el.innerHTML = `${escapeHtml(fname)}`;
 
     // Add the click event listener here
@@ -1169,6 +1170,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 
 
 

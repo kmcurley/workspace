@@ -1,0 +1,215 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resize Images</title>
+	
+	<style>
+		table, td, tr, input, label, option, p {
+			//border: 1px solid black;
+			background-color: light grey;
+			border-collapse: collapse;
+			font-size: 18px;
+		}
+	</style>
+</head>
+<p style="font-size: 20px; font-weight:bold;">
+Choose image files and set attributes of the images then click "Resize Images" to execute. 
+<hr>
+<table>
+<tr>
+<td align=right><label  for="picsize">Select Image Resize Value:</label>
+<td><select name="picsize" id="picsize" onchange="Check4Custom()">
+<option id="keep" value="keep">keep current size</option>
+<option id="4x6"  value="4x6" >4 x 6</option>
+<option id="5x7"  value="5x7" >5 x 7</option>
+<option id="8x10" value="8x10">8 x 10</option>
+<option id="cust" value="cust">custom size</option>
+</select>
+</td>
+<td align=right >
+<div id="ifcust" style="display: none;">
+<label for="custSize">Enter Image Custom Width</label> 
+<input type="number" id="custSize" name="custSize" /><br>Number under 15 assumes inches
+</div>
+</tr>
+<tr>
+<td align=right><label for="compress">Select Image Quality Percentage:</label>
+<td><input type="number" id="compress" value="95" min="50" max="95" step="5">
+</tr>
+<tr>
+<td align=right><label for="compress">Select to Display New Images:</label>
+<td><input type="checkbox" id="display" name="display" value="yes">
+<tr>
+<td align=right><label for="compress">Select to Download New Images:</label>
+<td><input type="checkbox" id="download" name="download" value="yes">
+</tr>
+<tr><td colspan=2><input type="file" id="inputImg" multiple accept="image/*">
+<td><input type="button" value="Resize Images" onclick="resizeImage();"/>
+</table>
+<hr>
+<pre class="output"> </pre>
+<div id="imageContainer"></div>
+
+<script>
+	async function compressImage(blobImg, percent, newWidth, newHeight) {
+		let bitmap = await createImageBitmap(blobImg);
+		let canvas = document.createElement("canvas");
+		let ctx = canvas.getContext("2d");
+		if ( newWidth < 1 ) {
+			canvas.width = bitmap.width;
+			canvas.height = bitmap.height;
+		  } else {
+				if ( bitmap.width < bitmap.height ) {
+					canvas.width = newWidth;
+					canvas.height = Math.floor(bitmap.height / bitmap.width * canvas.width);
+				  } else {
+					canvas.width = newHeight;
+					canvas.height = Math.floor(bitmap.height / bitmap.width * canvas.width);
+				};
+		};  
+		console.log(`bitmap.width=${bitmap.width}  bitmap.height=${bitmap.height}`);
+		console.log(`canvas.width=${canvas.width}  canvas.height=${canvas.height}`);
+		console.log(`Percent to compress: ${percent}`);
+		//canvas.width = bitmap.width;
+		//canvas.height = bitmap.height;
+		ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+		let dataUrl = canvas.toDataURL("image/jpeg", percent/100);
+		return dataUrl;
+	};
+	// Save | Download image
+	function downloadImage(data, filename = 'untitled.jpeg') {
+		const parts = filename.split(".");          // split filename by dots
+		const fileType = parts.pop();               // save filetype 
+		const newFilename = parts.join(".") + '(compressed).' + fileType; 
+		const length = data.length*3/4;
+		var a = document.createElement('a');
+		a.href = data;
+		a.download = newFilename;
+		document.body.appendChild(a);
+		a.click();
+		//output.innerText += `\nFile "${filename}" compressed into file ${newFilename} ${toKB(length)}`;
+    };
+	function Check4Custom() {
+        if (document.getElementById("cust").selected) {
+            document.getElementById("ifcust").style.display = "block";
+        } else {
+            document.getElementById("ifcust").style.display = "none";
+        }
+    };
+	
+	var files;
+	const output = document.querySelector(".output"); 
+	const imageContainer = document.getElementById('imageContainer');
+	var total_input = total_output = picWidth = picHeight = 0;
+	var display = download = false;
+	var picsize = 'keep';
+	var compValue = '100';
+	//inputImg.addEventListener('change', async(e) => {
+	var screen_type = 'summary';
+	
+	inputImg.addEventListener('change', async(e) => {
+		files = e.target.files;
+	});
+	
+	async function resizeImage() {
+		const cb = document.querySelector('#display');
+		display = cb.checked;
+		const cd = document.querySelector('#download');
+		download = cd.checked;
+		const picsizeElement = document.getElementById("picsize");
+		picsize = picsizeElement.options[picsizeElement.selectedIndex].value;
+		switch (picsize) {
+			case '4x6':
+				picWidth  = 384; // 4 inched in pivels
+				picHeight = 576; // 6 inches in pixels
+			break;
+			case '5x7':
+				picWidth  = 480; // 5 inched in pivels
+				picHeight = 672; // 7 inches in pixels
+			break;
+			case '8x10':
+				picWidth  = 768; //  8 inched in pivels
+				picHeight = 960; // 10 inches in pixels				
+			break;
+			case 'cust':
+				const custom = document.getElementById("custSize");
+				var picWidth = custom.value;
+				if ( picWidth < 15 ) { //picWidth under 15 assume inches
+					picWidth = picWidth * 96; // 96 pixels per inched
+				};			  
+				picHeight = picWidth + 1; // set height to zero so width take precidence				
+			break;			
+			case 'keep':
+			default:
+				picHeight = 0; // original size
+				picWidth  = 0; // original size
+			break;
+		};
+		const compress = document.getElementById("compress");
+		compValue = compress.value;
+		console.log(`picsize=${picsize} compValue=${compValue}`);
+		console.log('Display ', display, '   Download ', download);
+		imageContainer.innerHTML = '';
+		var pages = files.length;
+		var page = 0;
+		for ( file of files ) {
+			if ( file.type === 'image/jpeg' ) {
+				page++;
+				//let img = e.target.files[0];
+				console.log('File Name: ', file.name);
+				console.log('file.type; ', file.type);
+				var imgCompressed = await compressImage(file, compValue, picWidth, picHeight);  
+				var compSize = atob(imgCompressed.split(",")[1]).length;
+				console.log('  Original File Size: ', Math.ceil(file.size/1024).toLocaleString().padStart(6, ' '), 'KB');
+				console.log('Compressed File Size: ', Math.ceil(compSize/1024).toLocaleString().padStart(6, ' '), 'KB');
+				if ( display ) {
+					// KC added to display compressed image
+					let mypic = new Image();
+					mypic.src = imgCompressed;
+					mypic.onload = function() {
+						mypic.style.maxWidth = "100%";
+						mypic.style.marginBottom = '10px';
+						mypic.style.border = "thin solid blue";
+						imageContainer.appendChild(mypic);
+					};	
+				};  
+				total_input += file.size; 
+				total_output += compSize;
+				if ( screen_type === 'list' ) {
+					const inSize = Math.ceil(file.size/1024).toLocaleString();
+					const outSize = Math.ceil(compSize/1024).toLocaleString();
+					output.innerText += `\nFile "${file.name}" size(${inSize}KB) compressed to size(${outSize}KB) `;
+					output.innerText += `(${page} of ${pages})`;
+					console.log(`total_input=${total_input}  total_output=${total_output}`);
+				  } else {				
+					var stin = Math.ceil(total_input/(1024)).toLocaleString();
+					var stout = Math.ceil(total_output/(1024)).toLocaleString();
+					var stdiff = Math.ceil((total_input-total_output)/(1024)).toLocaleString();
+					output.innerText = `Total input size(${stin}KB) `;
+					output.innerText += `Total output size(${stout}KB) `;
+					output.innerText += `Total amount saved(${stdiff}KB) `;
+					output.innerText += `(${page} of ${pages})`;
+				};					
+			
+				if ( download ) {
+					// KC added to download compressed image
+					console.log('Downloading...');
+					downloadImage(imgCompressed, file.name); // ready for download or upload
+				};
+			  } else {
+				console.log(`File "${file.name}" is NOT an image file`);
+			};
+		};
+		if ( screen_type === 'list' ) {
+			var tin = Math.ceil(total_input/(1024)).toLocaleString();
+			var tout = Math.ceil(total_output/(1024)).toLocaleString();
+			var tdiff = Math.ceil((total_input-total_output)/(1024)).toLocaleString();
+			output.innerText += `\n\nTotal input  size ${tin}KB`;
+			output.innerText += `\nTotal output size ${tout}KB`;
+			output.innerText += `\nTotal amount saved ${tdiff}KB`;
+		};
+	};
+
+</script>
+</html>

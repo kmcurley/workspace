@@ -1144,6 +1144,7 @@ function renderTable(){
         }
         const td = document.createElement('td');
 		//td.innerHTML = escapeHtml(displayVal == null ? '' : String(displayVal));
+		console.log(`colName(${colName})`);  
 		if("Ticket" == colName || "Ticket #" == colName){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
@@ -1187,4 +1188,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 
 </body>
 </html>
+
 

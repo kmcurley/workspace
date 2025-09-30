@@ -448,6 +448,11 @@ let state = {
   // wire up UI
   wireUI();
   tryFetchCsvList();
+  let kc = 0;
+  state.availableFiles.forEach(fname => {
+    kc++;
+	console.log(`(${kc})(${fname})`);
+  });	
   if ("1" == "2") {	
   // attempt to auto-load from URL param
   const providedUrl = getUrlParam('csv-url'); // optional alternative param
@@ -1191,3 +1196,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+

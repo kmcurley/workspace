@@ -320,7 +320,7 @@ function tryFetchCsvList(){
   }).then(list=>{
     console.log('tryFetchCsvList: check list to see if array');
     if(Array.isArray(list)){
-	  colsole.log(`display list from /csv-list.json`);
+	  colsole.log(`display list from ${jsonName}`);	
 	  console.log(list);
       state.availableFiles = list;
       renderFileList();
@@ -338,7 +338,7 @@ function tryFetchCsvList(){
 function renderFileList() {
   const fl = qs('#file-list');
   if (!state.availableFiles || state.availableFiles.length === 0) {
-    fl.innerHTML = `<div class="small-muted">No files found in /csv-list.json</div>`;
+    fl.innerHTML = `<div class="small-muted">No files found in ${jsonName}</div>`;
     return;
   }
   fl.innerHTML = '';
@@ -364,5 +364,6 @@ function renderFileList() {
 </body>
 
 </html>
+
 
 

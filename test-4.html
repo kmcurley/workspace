@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CSV Viewer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="author" content="Kevin Curley - chatgpt-8a.html - 2025-09-24">
+  <style>
+    :root{
+      --gap:12px;
+      --muted:#666;
+      --card:#e9ecef;
+      --bg:#f4f6f8;
+      --accent:#0b67ff;
+    }
+    body{
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      margin:0;
+      padding:20px;
+      background:var(--bg);
+      color:#111;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    h1{ margin:0; font-size:1.25rem; }
+    .controls-card{
+      background:var(--card);
+      padding:12px;
+      border-radius:10px;
+      box-shadow:0 1px 4px rgba(0,0,0,0.06);
+      margin-bottom:14px;
+    }
+    .controls-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:var(--gap);
+      align-items:start;
+    }
+    .col{
+      background:#fff;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid rgba(0,0,0,0.04);
+      min-height:120px;
+    }
+    .col h3{ margin:0 0 8px 0; font-size:0.95rem; }
+    .file-list { max-height:220px; overflow:auto; padding-right:6px; }
+    .checkbox-list{ max-height:300px; overflow:auto; }
+    .inline-row{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+    label{ font-size:0.95rem; }
+    button{
+      background:var(--accent);
+      color:white;
+      border:0;
+      padding:8px 10px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:600;
+    }
+	button.primary { background:#0b67ff; color:#fff; }
+	button.success { background:#28a745; color:#fff; }
+	button.danger  { background:#d9534f; color:#fff; }
+    button.ghost{
+      background:transparent;
+      color:var(--accent);
+      border:1px solid rgba(11,103,255,0.12);
+      font-weight:600;
+    }
+    button.small{ padding:6px 8px; font-size:0.9rem; border-radius:6px; }
+    .muted{ color:var(--muted); font-size:0.9rem; }
+    .controls-actions{ display:flex; gap:8px; margin-top:10px; }
+    .table-wrap{ background:var(--card); padding:12px; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+    table{ width:100%; border-collapse:collapse; }
+    th, td{ text-align:left; padding:8px 6px; border-bottom:1px solid #eef2f6; font-size:0.95rem; vertical-align:top; }
+    th.sticky{ position:sticky; top:0; background:#fff; z-index:2; }
+    .small-muted{ font-size:0.85rem; color:var(--muted); }
+    .control-actions-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+    .control-block{ background: #fff; padding:8px; border-radius:8px; border:1px solid rgba(0,0,0,0.04); margin-bottom:8px; }
+    .row-actions{ display:flex; gap:8px; align-items:center; margin-top:6px; }
+    .pill{ border-radius:999px; padding:4px 8px; border:1px solid #e1e7ee; background:#f9fbff; font-size:0.9rem; }
+    .delete-x{ cursor:pointer; margin-left:8px; color:#b33; font-weight:700; }
+    input[type="text"], select{
+      width:100%;
+      padding:6px 8px;
+      border-radius:6px;
+      border:1px solid #d7dee7;
+      box-sizing:border-box;
+    }
+    .flex{ display:flex; gap:8px; align-items:center; }
+    .right{ margin-left:auto; }
+    .hidden{ display:none !important; }
+    .file-input{ display:flex; gap:8px; align-items:center; }
+    .small-note{ font-size:0.85rem; color:var(--muted); margin-top:6px; }
+    .topbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .toggle-btn{ background:#0b67ff; color:#fff; border:1px solid rgba(0,0,0,0.06); padding:6px 8px; border-radius:8px; cursor:pointer; }
+    .sr-only{ position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+    .no-data{ padding:20px; text-align:center; color:var(--muted); }
+	/* Style rules for report-table */
+	.table-style-RT { border-collapse: collapse; width: 100%; }
+	.table-style-RT th, .table-style-RT td {
+		border: 1px solid #ccc;
+		padding: 2px;
+		background-color: #f2f2f2;
+		font-size: 12px;
+	}
+	h4 {  font-size: 0.8em; /* Relative to the parent's font size */ }
+	.align-center { text-align: center; }
+	.file-item {
+		font-size: 12px; /* Corrected font size property */
+		border-bottom: 1px dashed #eef2f6;
+		cursor: pointer;
+		color: blue;
+	}
+	.file-item:hover {
+		/* Change color and/or other styles on hover */
+		color: #004085; /* A darker blue for a subtle change */
+		background-color: #f0f0f0;
+		border-bottom: 1px dashed #004085; /* Change border color on hover */
+	}
+	.help-box {
+		display: none; /* Hide the help box by default */
+		position: absolute; /* Position it relative to the nearest positioned ancestor */
+		background-color: #f9f9f9; /* Background color */
+		border: 1px solid #ccc; /* Border */
+		border-radius:8px;
+		padding: 10px; /* Padding */
+		z-index: 1000; /* Ensure it appears above other elements */
+	}
+	.help-hover:hover + .help-box {
+		display: block; /* Show the help box on hover */
+	}
+}
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1 id="table-title">Table: <span id="table-name">workorders</span></h1>
+    <div class="small-muted" id="table-sub">Loaded CSV: <span id="csv-loaded">—</span></div>
+  </div>
+  <div class="topbar">
+    <input
+  type="button"
+  value="Download latest 2025 Work Orders"
+  onclick="window.open('https://www.avalon-estates.com/admin2/requestmanager/export.php?act=export&category=1&status=0&staffid=&begin=01%2F01%2F2025&end=&submit=Submit', '_blank');"
+  style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: Arial, sans-serif;"
+> 
+    <button id="toggle-controls" class="toggle-btn">Hide Controls</button>
+    <div class="small-muted">Default table param: <code>?table=workorders</code></div>
+  </div>
+</header>
+
+<section class="controls-card" id="controls-section">
+  <div class="control-actions-row">
+    <div class="pill">Controls</div>
+    <div class="small-muted">Use the controls below to show/hide columns, add sorts and searches. Click Apply Changes to update the table.</div>
+    <div class="right">
+      <button id="apply-btn" class="danger">Apply Changes</button>
+    </div>
+  </div>
+
+  <div class="controls-grid">
+    <!-- Column 1: file list -->
+    <div class="col" id="col-files">
+	<h3 class="help-hover">1) CSV files (available on Server)</h3>
+	<div class="help-box">If your server provides a file,<br>
+						  csv-list.json (array of filenames),<br>
+						  the file names will be show here.<br>
+						  Otherwise use the 'Choose file'
+						  <br> to display a local file.</div>
+      <div class="file-list" id="file-list">
+        <div class="muted small-note">Trying to fetch /csv-list.json for available files...</div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <div class="file-input">
+          <input type="text" id="csv-url-input" placeholder="Paste a CSV URL (or leave empty to use ?table=...)" />
+          <button id="load-url" class="small ghost">Load</button>
+        </div>
+        <div style="margin-top:8px;">
+          <label class="small-muted">or load a local CSV file: <input type="file" id="local-file" accept=".csv" /></label>
+        </div>
+      </div>
+	  <div id="report-table"></div>
+    </div>
+
+    <!-- Column 2: columns with checkboxes -->
+    <div class="col" id="col-columns">
+      <h3>2) Columns to display</h3>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <label><input type="checkbox" id="select-all-cols" /> Select all</label>
+        <div class="small-muted">Toggle all column checkboxes</div>
+      </div>
+      <div class="checkbox-list" id="columns-list">
+        <div class="small-muted">No CSV loaded yet.</div>
+      </div>
+    </div>
+
+    <!-- Column 3: sort and search -->
+    <div class="col" id="col-sort-search">
+      <h3>3) Sort & Search</h3>
+
+      <!-- Sort controls -->
+      <div class="control-block" id="sort-block">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong>Sorts</strong>
+          <div>
+            <button id="add-sort" class="small">Add Sort</button>
+            <button id="clear-sorts" class="small danger">Clear Sorts</button>
+          </div>
+        </div>
+        <div id="sort-list" style="margin-top:8px;">
+          <div class="small-muted">No sorts defined.</div>
+        </div>
+      </div>
+
+      <!-- Search controls -->
+      <div class="control-block" id="search-block">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong>Searches</strong>
+          <div>
+            <button id="add-search" class="small">Add Search</button>
+            <button id="clear-searches" class="small danger">Clear Searches</button>
+          </div>
+        </div>
+        <div id="search-list" style="margin-top:8px;">
+          <div class="small-muted">No searches defined.</div>
+        </div>
+        <div class="small-note" style="margin-top:6px;">
+          Up to 4 searches. Searches are combined with AND (rows must match all).
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="controls-actions" style="margin-top:12px;">
+    <button id="apply-bottom" class="danger">Apply Changes</button>
+    <button id="reset-btn" class="ghost">Reset to defaults</button>
+  </div>
+</section>
+
+<main>
+  <div class="table-wrap">
+    <div id="table-container">
+      <div class="no-data">No data loaded yet.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+/*
+ CSV Viewer
+ - Reads ?table=... from URL (defaults to 'workorders')
+ - Attempts to fetch <table>.csv (or if provided as url via input, uses that)
+ - If '/csv-list.json' available it will populate "available files" list
+ - Column selection, multi-sort, up to 4 searches
+ - Date conversion from mm/dd/yyyy -> yyyy-mm-dd for sorting/searching/display
+ - Apply Changes button applies filters/sorts and renders table
+*/
+
+// ----------------- Utilities -----------------
+function qs(sel, el=document) { return el.querySelector(sel); }
+function qsa(sel, el=document) { return Array.from(el.querySelectorAll(sel)); }
+function escapeHtml(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
+function getUrlParam(name){
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+function ensureCsvExt(name){
+  if(!name) return name;
+  return name.toLowerCase().endsWith('.csv') ? name : (name + '.csv');
+}
+
+// Robust-ish CSV parser supporting quoted fields with commas/newlines inside quotes.
+function parseCSV(text){
+  // Return array of rows; first row is header.
+  // Implement state machine
+  const rows = [];
+  let cur = [];
+  let field = '';
+  let i=0;
+  const len = text.length;
+  let inQuotes = false;
+  while(i < len){
+    const ch = text[i];
+    if(inQuotes){
+      if(ch === '"'){
+        if(text[i+1] === '"'){ field += '"'; i += 2; continue; } // escaped quote
+        else { inQuotes = false; i++; continue; }
+      } else {
+        field += ch;
+        i++;
+        continue;
+      }
+    } else {
+      if(ch === '"'){ inQuotes = true; i++; continue; }
+      if(ch === ','){ cur.push(field); field = ''; i++; continue; }
+      if(ch === '\r'){
+        // ignore, handle on \n
+        i++; continue;
+      }
+      if(ch === '\n'){
+        cur.push(field);
+        rows.push(cur);
+        cur = [];
+        field = '';
+        i++;
+        continue;
+      }
+      field += ch;
+      i++;
+    }
+  }
+  // flush
+  if(inQuotes){
+    // malformed but flush anyway
+    cur.push(field);
+    rows.push(cur);
+  } else {
+    if(field !== '' || cur.length > 0){
+      cur.push(field);
+      rows.push(cur);
+    }
+  }
+  return rows;
+}
+
+// Convert mm/dd/yyyy to yyyy-mm-dd (strict), else return original.
+function mmddyyyy_to_iso(s){
+  //console.log('mmddyyy_to_iso s=', s);
+  if(!s) return s; 
+  // trim spaces
+  const t = s.trim();
+  //KC - changed this code to allow for mm/dd/yy or mm/dd/yyyy
+  let yyyy = null;
+  let m = null;  
+  if(/^\d{1,2}\/\d{1,2}\/\d{1,2}$/.test(t)){
+		m = /^(\d{1,2})\/(\d{1,2})\/(\d{1,2})$/.exec(t);
+		//console.log('s=', s, '  m[1]=', m[1], '  m[2]=', m[2], '  m[3]=', m[3]);	
+		if(!m) return null;
+		const yy = String(m[3]).padStart(2,'0');
+		yyyy = "20" + yy;
+		//console.log(`yyyy=${yyyy}`);
+	} else if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t)){
+		m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
+		//console.log('s=', s, '  m[1]=', m[1], '  m[2]=', m[2], '  m[3]=', m[3]);	
+		if(!m) return null;
+		yyyy = m[3];
+		//console.log(`yyyy=${yyyy}`);
+	} else {
+		return null;
+  }	
+  //const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);   
+  //if(!m) return null;
+  //console.log('s=', s, '  m[1]=', m[1], '  m[2]=', m[2], '  m[3]=', m[3]);	  
+  const mm = String(m[1]).padStart(2,'0');
+  const dd = String(m[2]).padStart(2,'0');
+  //console.log(`return: ${yyyy}-${mm}-${dd}`);
+  //return `${yyyy}-${mm}-${dd}`;
+  return `${yyyy}/${mm}/${dd}`;
+}
+
+// Try to coerce string to comparable value for sort/search
+function coerceValue(val, detectDate){
+  if(val == null) return '';
+  if(typeof val !== 'string') return val;
+  const t = val.trim();
+  if(detectDate){
+    const iso = mmddyyyy_to_iso(t);
+    if(iso) return iso;
+  }
+  // numeric?
+  if(/^-?\d+(\.\d+)?$/.test(t)) return Number(t);
+  return t.toLowerCase();
+}
+
+// Multi-level sort comparator factory
+function makeComparator(sortDefs, columnIndexMap, dateColumnSet){
+  // sortDefs: [{col: "Name", dir:"asc"} , ... ] applied in order
+  return function(a,b){
+    for(const s of sortDefs){
+      const col = s.col;
+      const dir = s.dir === 'desc' ? -1 : 1;
+      const idx = columnIndexMap[col];
+      if(idx === undefined) continue;
+      let va = a.__parsed && a.__parsed[idx] !== undefined ? a.__parsed[idx] : (a[idx] || '');
+      let vb = b.__parsed && b.__parsed[idx] !== undefined ? b.__parsed[idx] : (b[idx] || '');
+      // if date col, compare iso strings as strings
+      if(dateColumnSet.has(col)){
+        // if either null then treat empty as less
+        if(va == null) va = '';
+        if(vb == null) vb = '';
+        if(va < vb) return -1 * dir;
+        if(va > vb) return 1 * dir;
+      } else {
+        // coerce numbers, strings
+        if(typeof va === 'string' && /^-?\d+(\.\d+)?$/.test(va)) va = Number(va);
+        if(typeof vb === 'string' && /^-?\d+(\.\d+)?$/.test(vb)) vb = Number(vb);
+        if(va < vb) return -1 * dir;
+        if(va > vb) return 1 * dir;
+      }
+    }
+    return 0;
+  };
+}
+
+// Get the full URL of this execution for any queries in the javascript
+let fullUrl = window.location.href;
+console.log(`The full URL is: ${fullUrl}`);
+// Get just the URL path
+let urlPath = window.location.pathname;
+console.log(`The URL path is: ${urlPath}`);
+
+// ----------------- App State -----------------
+let state = {
+  tableParam: getUrlParam('table') || 'workorders',
+  csvUrl: null,
+  rawText: null,
+  header: [],
+  rows: [], // arrays of cells
+  parsedRows: [], // objects? we will store arrays plus __parsed representation for convenience
+  visibleColumns: [], // array of header names to display
+  sorts: [], // array of {id, col, dir}
+  searches: [], // array of {id, col, value}
+  dateColumns: new Set(), // header names that are dates
+  availableFiles: [], // from /csv-list.json if available
+};
+
+(function init(){
+  // normalize table param & set title
+  if(state.tableParam.toLowerCase().endsWith('.csv')) {
+    // ok
+  } else {
+    // leave as given; we'll try to fetch with .csv appended
+  }
+  document.getElementById('table-name').textContent = state.tableParam;
+  // wire up UI
+  wireUI();
+  tryFetchCsvList();
+  // attempt to auto-load from URL param
+  const providedUrl = getUrlParam('csv-url'); // optional alternative param
+  if(providedUrl){
+    loadCsvFromUrl(providedUrl);
+  } else {
+    // default attempt: try fetch table param as given, with or without .csv
+    tryAutoLoadTable(state.tableParam);
+  }
+})();
+
+// ----------------- UI wiring -----------------
+function wireUI(){
+  const toggle = qs('#toggle-controls');
+  const section = qs('#controls-section');
+  toggle.addEventListener('click', ()=>{
+    if(section.classList.contains('hidden')){
+      section.classList.remove('hidden');
+      toggle.textContent = 'Hide Controls';
+    } else {
+      section.classList.add('hidden');
+      toggle.textContent = 'Show Controls';
+    }
+  });
+
+  qs('#load-url').addEventListener('click', ()=>{
+    const url = qs('#csv-url-input').value.trim();
+    if(!url){ alert('Please paste a CSV URL.'); return; }
+    loadCsvFromUrl(url);
+  });
+
+  qs('#local-file').addEventListener('change', (ev)=>{
+    const f = ev.target.files && ev.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const text = e.target.result;
+      state.csvUrl = 'local:' + f.name;
+      state.rawText = text;
+      processCsvText(text, f.name);
+    };
+    reader.readAsText(f);
+  });
+
+  qs('#apply-btn').addEventListener('click', applyChanges);
+  qs('#apply-bottom').addEventListener('click', applyChanges);
+  qs('#reset-btn').addEventListener('click', ()=>{
+    // reset sorts/searches/columns to initial simple defaults
+    state.sorts = [];
+    state.searches = [];
+    if(state.header && state.header.length){
+      state.visibleColumns = [...state.header];
+    }
+    renderControls();
+    renderTable();
+  });
+
+  qs('#select-all-cols').addEventListener('change', (ev)=>{
+    const checked = ev.target.checked;
+    qsa('.col-checkbox').forEach(cb => cb.checked = checked);
+  });
+
+  qs('#add-sort').addEventListener('click', ()=>{
+    addSortControl();
+  });
+  qs('#clear-sorts').addEventListener('click', ()=>{
+    state.sorts = [];
+    renderControls();
+  });
+
+  qs('#add-search').addEventListener('click', ()=>{
+    if(state.searches.length >= 4){ alert('Maximum 4 searches'); return; }
+    addSearchControl();
+  });
+  qs('#clear-searches').addEventListener('click', ()=>{
+    state.searches = [];
+    renderControls();
+  });
+
+  // when user clicks a filename in file-list
+  qs('#file-list').addEventListener('click', (ev)=>{
+    const target = ev.target;
+    if(target && target.dataset && target.dataset.file){
+      const file = target.dataset.file;
+      loadCsvFromUrl(file);
+    }
+  });
+}
+
+// ----------------- CSV file list attempt -----------------
+function tryFetchCsvList(){
+ console.log('tryFetchCsvList:');
+ let jsonName = 'csv-list.json';
+ if ( fullUrl.toLowerCase().startsWith("http") && fullUrl.toLowerCase().includes("/workspace/") ) {
+		// looks like we are using the workspace sever so set name 
+		jsonName = '/workspace/csv-list.json';
+	}
+ if ( fullUrl.toLowerCase().startsWith("file:") ) {
+	// if we loaded html from a file the CORS policy won't allow local file access
+	// so we'll just simulate a list for demo purposes and render files list
+	console.log('Simulating JSON file retrieval for demo purpose');
+	state.availableFiles = ['workorders.csv'];
+	renderFileList();
+  } else {
+  // assume server may provide /csv-list.json (array of strings)
+  console.log('tryFetchCsvList: Fetch');
+  fetch(jsonName).then(r=>{
+    console.log(`r.ok=${r.ok}`);
+    if(!r.ok) throw new Error('no csv-list');
+    return r.json();
+  }).then(list=>{
+    console.log('tryFetchCsvList: check list to see if array');
+    if(Array.isArray(list)){
+      state.availableFiles = list;
+      renderFileList();
+    }
+  }).catch(err=>{
+    // fallback: show input only; update message
+    const fl = qs('#file-list');
+    fl.innerHTML = `<div class="small-muted">No /csv-list.json available (or fetch failed). Use paste or local-file below.</div>`;
+  });
+  }
+}
+
+function renderFileList() {
+  const fl = qs('#file-list');
+  if (!state.availableFiles || state.availableFiles.length === 0) {
+    fl.innerHTML = `<div class="small-muted">No files found in /csv-list.json</div>`;
+    return;
+  }
+  fl.innerHTML = '';
+  state.availableFiles.forEach(fname => {
+    const el = document.createElement('div');
+    el.classList.add('file-item');
+	el.dataset.file = fname;
+    el.innerHTML = `${escapeHtml(fname)}`;
+
+    // Add the click event listener here
+    el.addEventListener('click', (event) => {
+      const selectedFile = event.target.dataset.file;
+      console.log(`Loading file: ${selectedFile}`);
+      tryAutoLoadTable(selectedFile);
+    });
+
+    fl.appendChild(el);
+  });
+}
+</script>
+
+</body>
+</html>

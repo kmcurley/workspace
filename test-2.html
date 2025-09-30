@@ -312,6 +312,7 @@ function tryFetchCsvList(){
   } else {
   // assume server may provide /csv-list.json (array of strings)
   console.log('tryFetchCsvList: Fetch');
+  console.log(`jsonName(${jsonName})`);	 
   fetch(jsonName).then(r=>{
     console.log(`r.ok=${r.ok}`);
     if(!r.ok) throw new Error('no csv-list');
@@ -363,4 +364,5 @@ function renderFileList() {
 </body>
 
 </html>
+
 

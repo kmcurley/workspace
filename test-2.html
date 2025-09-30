@@ -323,7 +323,9 @@ function tryFetchCsvList(){
 	  console.log(list);
       state.availableFiles = list;
       //renderFileList();
-    }
+    } else {
+	  console.log('tryFetchCsvList: looks like Array.isArray was false.');
+	}
   }).catch(err=>{
     // fallback: show input only; update message
     const fl = qs('#file-list');
@@ -359,4 +361,5 @@ function renderFileList() {
 </script>
 
 </body>
+
 </html>

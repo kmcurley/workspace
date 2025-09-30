@@ -322,7 +322,7 @@ function tryFetchCsvList(){
 	  colsole.log(`display list from /csv-list.json`);
 	  console.log(list);
       state.availableFiles = list;
-      //renderFileList();
+      renderFileList();
     } else {
 	  console.log('tryFetchCsvList: looks like Array.isArray was false.');
 	}
@@ -363,3 +363,4 @@ function renderFileList() {
 </body>
 
 </html>
+

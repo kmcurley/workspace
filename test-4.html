@@ -448,6 +448,7 @@ let state = {
   // wire up UI
   wireUI();
   tryFetchCsvList();
+  if ("1" == "2") {	
   // attempt to auto-load from URL param
   const providedUrl = getUrlParam('csv-url'); // optional alternative param
   if(providedUrl){
@@ -456,6 +457,7 @@ let state = {
     // default attempt: try fetch table param as given, with or without .csv
     tryAutoLoadTable(state.tableParam);
   }
+  }	  
 })();
 
 // ----------------- UI wiring -----------------
@@ -1187,4 +1189,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
+
 </html>

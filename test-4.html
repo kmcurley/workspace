@@ -449,6 +449,7 @@ let state = {
   // wire up UI
   wireUI();
   tryFetchCsvList();
+  console.log(`CSV list loading complete`);
   let kc = 0;
   state.availableFiles.forEach(fname => {
     kc++;
@@ -1197,5 +1198,6 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+
 
 

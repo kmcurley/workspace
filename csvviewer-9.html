@@ -677,7 +677,7 @@ function tryAutoLoadTable(tableParam){
     }
     const url = attempts[idx];
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'reload' });
       if(!res.ok) throw new Error('fetch failed ' + res.status);
       const text = await res.text();
       state.csvUrl = url;
@@ -1264,4 +1264,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
+
 </html>

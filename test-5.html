@@ -575,7 +575,7 @@ function tryFetchTicIdList(){
     // fallback: show input only; update message
     //const fl = qs('#file-list');
     //fl.innerHTML = `<div class="small-muted">No /csv-list.json available (or fetch failed). Use paste or local-file below.</div>`;
-	console.log(`tryFetchTicIdList: ERROR: error retrieving ${ticIdName} file`);
+	console.log(`tryFetchTicIdList: ERROR: error retrieving ${ticIdName} file: ${err}`);
   });
   }
 }
@@ -1250,4 +1250,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+
 

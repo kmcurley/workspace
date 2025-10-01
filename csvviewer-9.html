@@ -451,7 +451,7 @@ let state = {
   wireUI();
   tryFetchCsvList();
   //tryFetchTicIdList();
-  state.ticId = kc-retrieve();
+  state.ticId = kcRetrieve();
   console.log('state.ticId arrary length is ', state.ticId.length);
   if ("1" == "2") {
   // attempt to auto-load from URL param
@@ -580,7 +580,7 @@ function tryFetchTicIdList(){
   }
 }
 
-function kc-retrieve() {
+function kcRetrieve() {
 fetch('/workspace/tic-id.json')
   .then(response => {
     if (!response.ok) {
@@ -1260,4 +1260,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
+
 </html>

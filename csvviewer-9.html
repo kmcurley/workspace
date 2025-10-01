@@ -451,7 +451,7 @@ let state = {
   wireUI();
   tryFetchCsvList();
   //tryFetchTicIdList();
-  let ticArray = kc-retrieve();
+  let ticArray = kcRetrieve();
   console.log('state.ticId arrary length is ', ticArray.length);
   if ("1" == "2") {
   // attempt to auto-load from URL param
@@ -1262,4 +1262,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+
 

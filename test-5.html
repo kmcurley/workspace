@@ -449,14 +449,11 @@ let state = {
   document.getElementById('table-name').textContent = state.tableParam;
   // wire up UI
   wireUI();
+  console.log('excuting tryFetchCsvList()');
   tryFetchCsvList();
-  let kc = 0;
-  state.availableFiles.forEach(fname => {
-    kc++;
-	console.log(`(${kc})(${fname})`);
-  });	
-  tryFetchTicIdList();
-  if ("1" == "2") {
+  console.log('excuting tryFetchTicIdList()');
+  tryFetchTicIdList();	
+  if ("1" == "1") {
   // attempt to auto-load from URL param
   const providedUrl = getUrlParam('csv-url'); // optional alternative param
   if(providedUrl){
@@ -1251,4 +1248,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
+
 </html>

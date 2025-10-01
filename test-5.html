@@ -1199,14 +1199,15 @@ function renderTable(){
 		if("Ticket" == colName || "Ticket #" == colName){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
+			const ticketId = "0";
 			let ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
 			console.log(`workOrderID=${workOrderID}  ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
 			if (ticAndId === undefined ) { 
-				let secondPart = "0";
+				ticketId = "0";
 			  } else {
 				let parts = ticAndId.split("-");
-				let secondPart = parts[1];
+				ticketId = parts[1];
 			}
 			link.textContent = workOrderID;
 			link.href = `#`; // Use '#' to make it clickable without navigating away
@@ -1215,7 +1216,7 @@ function renderTable(){
 				// Prevent the default link behavior (navigating to '#')
 				event.preventDefault();  
 				// Call your popup function with the ID			
-				openWorkOrderPopup(workOrderID, secondPart);
+				openWorkOrderPopup(workOrderID, ticketId);
 			});
 			// Append the link to the cell
 			td.appendChild(link);
@@ -1247,6 +1248,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
-
 </html>
-

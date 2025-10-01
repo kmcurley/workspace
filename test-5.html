@@ -548,37 +548,37 @@ function wireUI(){
 
 // ----------------- Ticket ID file list attempt -----------------
 function tryFetchTicIdList(){
- console.log('tryFetchTicIdList:');
- let jsonName = 'tic-id.json';
+ console.log('tryFetchTicIdList: ');
+ let ticIdName = 'tic-id.json';
  if ( fullUrl.toLowerCase().startsWith("http") && fullUrl.toLowerCase().includes("/workspace/") ) {
 		// looks like we are using the workspace sever so set name 
-		jsonName = '/workspace/tic-id.json';
+		ticIdName = '/workspace/tic-id.json';
 	}
  if ( fullUrl.toLowerCase().startsWith("file:") ) {
 	// if we loaded html from a file the CORS policy won't allow local file access
 	// so we'll just simulate a list for demo purposes and render files list
-	console.log('Simulating JSON file retrieval for demo purpose');
-	state.ticId = ["AB12345-123", "AC12345-1", "AD12345-1234"];
+	console.log('tryFetchTicIdList: Simulating JSON file retrieval for demo purpose');
+	state.ticId = ["KL64582-3237", "NQ65533-3236", "LH77257-3221"];
 	//renderFileList();
   } else {
   // assume server may provide /tic-id.json (array of strings)
-  console.log(`tryFetchTicIdList: Fetch file ${jsonName}`);
-  fetch(jsonName).then(r=>{
-    console.log(`r.ok=${r.ok}`);
-    if(!r.ok) throw new Error('no csv-list');
-    return r.json();
+  console.log(`tryFetchTicIdList: Fetch file ${ticIdName}`);
+  fetch(ticIdName).then(rTicId=>{
+    console.log(`tryFetchTicIdList: rTicId.ok=${rTicId.ok}`);
+    if(!rTicID.ok) throw new Error('no TicId-list');
+    return rTicId.json();
   }).then(list=>{
     console.log('tryFetchTicIdList: check list to see if array');
     if(Array.isArray(list)){
       state.ticId = list;
-	  console.log(`list array size is ${list.length}`);
+	  console.log(`tryFetchTicIdList: list array size is ${list.length}`);
       //renderFileList();
     }
   }).catch(err=>{
     // fallback: show input only; update message
     //const fl = qs('#file-list');
     //fl.innerHTML = `<div class="small-muted">No /csv-list.json available (or fetch failed). Use paste or local-file below.</div>`;
-	console.log(`ERROR: error retrieving ${jsonName} file`);
+	console.log(`tryFetchTicIdList: ERROR: error retrieving ${ticIdName} file`);
   });
   }
 }
@@ -975,11 +975,12 @@ function openWorkOrderPopup(ticString, idString) {
     console.error("Error: openWorkOrderPopup: A valid string ID for Ticket # must be provided.");
     return;
   }
+  let url = "";
   if (!idString || typeof idString !== 'string' || idString == '0') {
 		// Construct the full URL with the provided ID to PRINT work order
-		const url = `https://www.avalon-estates.com/admin2/requestmanager/print_wo.php?id=${ticString}`;
+		url = `https://www.avalon-estates.com/admin2/requestmanager/print_wo.php?id=${ticString}`;
 	} else {
-		const url = `https://www.avalon-estates.com/forms/?view=useredit&id=${idString}&tic=${ticString}`;
+		url = `https://www.avalon-estates.com/forms/?view=staffedit&id=${idString}&tic=${ticString}`;
   }   
   //console.log(`url="${url}"`);
   // Define window features (size, scrollbars, etc.)
@@ -1199,8 +1200,8 @@ function renderTable(){
 		if("Ticket" == colName || "Ticket #" == colName){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
-			const ticketId = "0";
-			let ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
+			let ticketId = "0";
+			ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
 			console.log(`workOrderID=${workOrderID}  ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
 			if (ticAndId === undefined ) { 
@@ -1208,6 +1209,8 @@ function renderTable(){
 			  } else {
 				let parts = ticAndId.split("-");
 				ticketId = parts[1];
+				// Change the color to green
+				link.style.color = 'green';
 			}
 			link.textContent = workOrderID;
 			link.href = `#`; // Use '#' to make it clickable without navigating away

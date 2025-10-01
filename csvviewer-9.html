@@ -581,7 +581,8 @@ function tryFetchTicIdList(){
 }
 
 function kcRetrieve() {
-fetch('/workspace/tic-id.json')
+const file = '/workspace/tic-id.json';
+fetch(file, { cache: 'reload' })
   .then(response => {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -1265,6 +1266,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+
 
 
 

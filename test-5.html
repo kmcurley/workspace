@@ -629,7 +629,7 @@ function renderFileList() {
     const el = document.createElement('div');
     el.classList.add('file-item');
 	el.dataset.file = fname;
-	console.log(`fname=${fname});
+	console.log(`fname=${fname}`);
     el.innerHTML = `${escapeHtml(fname)}`;
 
     // Add the click event listener here
@@ -1235,4 +1235,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
+
 </html>

@@ -588,7 +588,7 @@ fetch('/workspace/tic-id.json')
     }
     return response.json();
   })
-  .then(data => console.log(data))
+  .then(data =>{ console.log(data); state.ticId = data; } ) 
   .catch(error => console.error('Fetch error:', error));
 }  
 
@@ -1211,7 +1211,7 @@ function renderTable(){
 			const workOrderID = displayVal;
 			let ticketId = "0";
 			ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
-			console.log(`workOrderID=${workOrderID}  ticAndId=${ticAndId}`);
+			//console.log(`workOrderID=${workOrderID}  ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
 			if (ticAndId === undefined ) { 
 				ticketId = "0";
@@ -1262,5 +1262,6 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+
 
 

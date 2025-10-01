@@ -416,7 +416,7 @@ function makeComparator(sortDefs, columnIndexMap, dateColumnSet){
 }
 
 // Get the full URL of this execution for any queries in the javascript
-console.log(`test-5.html  version 5.2`);
+console.log(`test-5.html  version 5.3`);
 let fullUrl = window.location.href;
 console.log(`The full URL is: ${fullUrl}`);
 // Get just the URL path
@@ -969,14 +969,18 @@ function applyChanges(){
   renderTable();
 }
 
-function openWorkOrderPopup(idString) {
+function openWorkOrderPopup(ticString, idString) {
   // Check if the passed in string is a valid value
-  if (!idString || typeof idString !== 'string') {
+  if (!ticString || typeof ticString !== 'string') {
     console.error("Error: openWorkOrderPopup: A valid string ID for Ticket # must be provided.");
     return;
   }
-  // Construct the full URL with the provided ID
-  const url = `https://www.avalon-estates.com/admin2/requestmanager/print_wo.php?id=${idString}`;
+  if (!idString || typeof idString !== 'string' || idString == '0') {
+		// Construct the full URL with the provided ID to PRINT work order
+		const url = `https://www.avalon-estates.com/admin2/requestmanager/print_wo.php?id=${ticString}`;
+	} else {
+		const url = `https://www.avalon-estates.com/forms/?view=useredit&id=${idString}&tic=${ticString}`;
+  }   
   //console.log(`url="${url}"`);
   // Define window features (size, scrollbars, etc.)
   const windowFeatures = "width=600,height=600,scrollbars=yes,resizable=yes,left=10,top=10";
@@ -1196,20 +1200,22 @@ function renderTable(){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
 			const ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
-			console.log(`workOrderID=${workOrderID}   ticAndId=${ticAndId}`);
+			console.log(`workOrderID=${workOrderID}  ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
-		    if (ticAndId !== "") {
-				link.textContent = ticAndId;
+			if (ticAndId !== "") { 
+				let parts = ticAndId.split("-");
+				let secondPart = parts[1];
 			  } else {
-				link.textContent = workOrderID;
+				let secondPart = "0";
 			}
+			link.textContent = workOrderID;
 			link.href = `#`; // Use '#' to make it clickable without navigating away
 			// Add the click event listener to the link
 			link.addEventListener('click', function(event) {
 				// Prevent the default link behavior (navigating to '#')
 				event.preventDefault();  
-				// Call your popup function with the ID
-				openWorkOrderPopup(workOrderID);
+				// Call your popup function with the ID			
+				openWorkOrderPopup(workOrderID, secondPart);
 			});
 			// Append the link to the cell
 			td.appendChild(link);
@@ -1241,8 +1247,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
-
 </html>
-
-
-

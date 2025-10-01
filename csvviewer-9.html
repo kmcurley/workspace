@@ -416,7 +416,7 @@ function makeComparator(sortDefs, columnIndexMap, dateColumnSet){
 }
 
 // Get the full URL of this execution for any queries in the javascript
-console.log(`test-5.html  version 5.3`);
+console.log(`csvviewer-9.html  version 9.1`);
 let fullUrl = window.location.href;
 console.log(`The full URL is: ${fullUrl}`);
 // Get just the URL path
@@ -557,35 +557,35 @@ function tryFetchTicIdList(){
  if ( fullUrl.toLowerCase().startsWith("file:") ) {
 	// if we loaded html from a file the CORS policy won't allow local file access
 	// so we'll just simulate a list for demo purposes and render files list
-	console.log('Simulating JSON file retrieval for demo purpose');
+	console.log('tryFetchTicIdList: Simulating JSON file retrieval for demo purpose');
 	state.ticId = ["KL64582-3237", "NQ65533-3236", "LH77257-3221"];
 	//renderFileList();
   } else {
   // assume server may provide /tic-id.json (array of strings)
   console.log(`tryFetchTicIdList: Fetch file ${jsonName}`);
   fetch(jsonName).then(r=>{
-    console.log(`r.ok=${r.ok}`);
+    console.log(`tryFetchTicIdList: r.ok=${r.ok}`);
     if(!r.ok) throw new Error('no csv-list');
     return r.json();
   }).then(list=>{
     console.log('tryFetchTicIdList: check list to see if array');
     if(Array.isArray(list)){
       state.ticId = list;
-	  console.log(`list array size is ${list.length}`);
+	  console.log(`tryFetchTicIdList: list array size is ${list.length}`);
       //renderFileList();
     }
   }).catch(err=>{
     // fallback: show input only; update message
     //const fl = qs('#file-list');
     //fl.innerHTML = `<div class="small-muted">No /csv-list.json available (or fetch failed). Use paste or local-file below.</div>`;
-	console.log(`ERROR: error retrieving ${jsonName} file`);
+	console.log(`tryFetchTicIdList: ERROR: error retrieving ${jsonName} file`);
   });
   }
 }
 
 // ----------------- CSV file list attempt -----------------
 function tryFetchCsvList(){
- console.log('tryFetchCsvList:');
+ console.log('tryFetchCsvList: ');
  let jsonName = 'csv-list.json';
  if ( fullUrl.toLowerCase().startsWith("http") && fullUrl.toLowerCase().includes("/workspace/") ) {
 		// looks like we are using the workspace sever so set name 
@@ -594,14 +594,14 @@ function tryFetchCsvList(){
  if ( fullUrl.toLowerCase().startsWith("file:") ) {
 	// if we loaded html from a file the CORS policy won't allow local file access
 	// so we'll just simulate a list for demo purposes and render files list
-	console.log('Simulating JSON file retrieval for demo purpose');
+	console.log('tryFetchCsvList: Simulating JSON file retrieval for demo purpose');
 	state.availableFiles = ['workorders.csv'];
 	renderFileList();
   } else {
   // assume server may provide /csv-list.json (array of strings)
   console.log(`tryFetchCsvList: Fetch file ${jsonName}`);
   fetch(jsonName).then(r=>{
-    console.log(`r.ok=${r.ok}`);
+    console.log(`tryFetchCsvList: r.ok=${r.ok}`);
     if(!r.ok) throw new Error('no csv-list');
     return r.json();
   }).then(list=>{
@@ -629,13 +629,13 @@ function renderFileList() {
     const el = document.createElement('div');
     el.classList.add('file-item');
 	el.dataset.file = fname;
-	console.log(`fname=${fname}`);
+	console.log(`renderFileList: fname=${fname}`);
     el.innerHTML = `${escapeHtml(fname)}`;
 
     // Add the click event listener here
     el.addEventListener('click', (event) => {
       const selectedFile = event.target.dataset.file;
-      console.log(`Loading file: ${selectedFile}`);
+      console.log(`renderFileList: Loading file: ${selectedFile}`);
       tryAutoLoadTable(selectedFile);
     });
 
@@ -1251,4 +1251,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
+
 </html>

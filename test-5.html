@@ -1195,6 +1195,8 @@ function renderTable(){
 		if("Ticket" == colName || "Ticket #" == colName){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
+			const ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderId);
+			console.log(`ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
 		    link.textContent = workOrderID;
 			link.href = `#`; // Use '#' to make it clickable without navigating away
@@ -1237,3 +1239,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+

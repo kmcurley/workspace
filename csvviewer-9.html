@@ -452,7 +452,7 @@ let state = {
   tryFetchCsvList();
   //tryFetchTicIdList();
   let ticArray = kcRetrieve();
-  console.log('state.ticId arrary length is ', ticArray.length);
+  state.ticId = ticArray;
   if ("1" == "2") {
   // attempt to auto-load from URL param
   const providedUrl = getUrlParam('csv-url'); // optional alternative param
@@ -588,7 +588,10 @@ fetch('/workspace/tic-id.json')
     }
     return response.json();
   })
-  .then(data =>{ console.log(data); state.ticId = data; } ) 
+  .then(data =>{ 
+	state.ticId = data; 
+  	console.log(`kcRetrieve: retrieved file ${file} with array size of ${data.length}.`);
+  }) 
   .catch(error => console.error('Fetch error:', error));
 }  
 
@@ -1262,6 +1265,7 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+
 
 
 

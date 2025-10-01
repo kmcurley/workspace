@@ -1199,14 +1199,15 @@ function renderTable(){
 		if("Ticket" == colName || "Ticket #" == colName){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
-			const ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
+			let ticAndId = 0;
+			let ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
 			console.log(`workOrderID=${workOrderID}  ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
-			if (ticAndId !== "") { 
+			if (ticAndId === undefined ) { 
+				let secondPart = "0";
+			  } else {
 				let parts = ticAndId.split("-");
 				let secondPart = parts[1];
-			  } else {
-				let secondPart = "0";
 			}
 			link.textContent = workOrderID;
 			link.href = `#`; // Use '#' to make it clickable without navigating away
@@ -1247,4 +1248,5 @@ window.addEventListener('resize', ()=>{/* noop */});
 </script>
 
 </body>
+
 </html>

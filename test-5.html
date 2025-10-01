@@ -1196,9 +1196,13 @@ function renderTable(){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
 			const ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
-			console.log(`ticAndId=${ticAndId}`);
+			console.log(`workOrderID=${workOrderID}   ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
-		    link.textContent = workOrderID;
+		    if (ticAndId !== "") {
+				link.textContent = ticAndId;
+			  } else {
+				link.textContent = workOrderID;
+			}
 			link.href = `#`; // Use '#' to make it clickable without navigating away
 			// Add the click event listener to the link
 			link.addEventListener('click', function(event) {
@@ -1239,5 +1243,6 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+
 
 

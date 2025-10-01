@@ -1199,7 +1199,6 @@ function renderTable(){
 		if("Ticket" == colName || "Ticket #" == colName){
 		// Create the cell and a string to pass
 			const workOrderID = displayVal;
-			let ticAndId = 0;
 			let ticAndId = state.ticId.find(entry => entry.substring(0, 7) === workOrderID);
 			console.log(`workOrderID=${workOrderID}  ticAndId=${ticAndId}`);
 			const link = document.createElement('a');
@@ -1250,3 +1249,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+

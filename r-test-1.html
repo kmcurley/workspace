@@ -2,7 +2,7 @@
 <h1>Test Retrieve</h1>
 
 <script>
-fetch('https://kmcurley.github.io/workspace/tic-id.json')
+fetch('https://kmcurley.github.io/workspace/tic-id.json', { cache: 'reload' })
   .then(response => {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -12,4 +12,5 @@ fetch('https://kmcurley.github.io/workspace/tic-id.json')
   .then(data => console.log(data))
   .catch(error => console.error('Fetch error:', error));
  </script>
+
  </html>

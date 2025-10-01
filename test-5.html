@@ -449,19 +449,24 @@ let state = {
   document.getElementById('table-name').textContent = state.tableParam;
   // wire up UI
   wireUI();
-  tryFetchCsvList();	
+  tryFetchCsvList();
+  let kc = 0;
+  state.availableFiles.forEach(fname => {
+    kc++;
+	console.log(`(${kc})(${fname})`);
+  });	
   tryFetchTicIdList();
   if ("1" == "2") {
-	// attempt to auto-load from URL param
-	const providedUrl = getUrlParam('csv-url'); // optional alternative param
-	if(providedUrl){
-	  loadCsvFromUrl(providedUrl);
-     } else {
+  // attempt to auto-load from URL param
+  const providedUrl = getUrlParam('csv-url'); // optional alternative param
+  if(providedUrl){
+    loadCsvFromUrl(providedUrl);
+  } else {
     // default attempt: try fetch table param as given, with or without .csv
-      tryAutoLoadTable(state.tableParam);
-    }
+    tryAutoLoadTable(state.tableParam);
   }
-}();
+  }
+)();
 
 // ----------------- UI wiring -----------------
 function wireUI(){

@@ -151,7 +151,7 @@ function parseCSV(csv, delimiter = ",") {
 
 let csvData = [], headers = [], ticId = [];
 // Get the full URL of this execution for any queries in the javascript
-console.log(`summary-15.html  version 15.1`);
+console.log(`summary-15.html  version 15.2`);
 let fullUrl = window.location.href;
 console.log(`The full URL is: ${fullUrl}`);
 // Get just the URL path
@@ -213,6 +213,7 @@ function populateColumnSelectors(cols) {
   ['filterColumn','summaryColumns','dateColumn'].forEach(id=>{
     const sel=document.getElementById(id); sel.innerHTML="";
     cols.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;sel.appendChild(o);});
+	const valField=document.getElementById('filterValue'); valField.placeholder="Value  (contains)";
   });
 
   // Optionally pre-select the first filter and date columns

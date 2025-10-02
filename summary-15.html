@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CSV Summary Tool (Pivot-like) — Responsive Controls</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 18px; font-size: 14px; color: #222; }
+    h2 { margin: 0 0 10px 0; }
+
+	table { border-collapse: collapse; margin: 10px 0; display: inline-table; }
+	th, td { border: 1px solid #aaa; padding: 8px; text-align: center; vertical-align: top; }
+    th { background-color: #f0f0f0; font-weight: 600; }
+    td { vertical-align: top; }
+
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(200px, 1fr));
+      gap: 10px;
+      background: #f3f3f3;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      align-items: start;
+    }
+    @media (max-width: 780px) {
+      #controls { grid-template-columns: 1fr; }
+    }
+    #controls section {
+      background: #fff;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 56px;
+      box-sizing: border-box;
+    }
+    label { font-size: 13px; }
+    input[type="file"] { font-size: 13px; }
+    input[type="text"], select { font-size: 13px; padding: 6px; box-sizing: border-box; }
+    select { min-height: 36px; }
+
+    .summary-row { display:flex; gap:8px; align-items:flex-start; }
+    #summaryColumns { flex: 1 1 auto; min-height: 140px; max-height: 160px; width:100%; }
+    .move-controls { display:flex; flex-direction: column; gap:6px; align-items: stretch; }
+
+    button {
+      padding: 6px 8px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn-primary { background: #007BFF; color: #fff; }
+    .btn-success { background: #28A745; color: #fff; }
+    .btn-move { background: #17A2B8; color: #fff; min-width: 60px; }
+    .btn-ghost { background: transparent; border: 1px solid #ddd; color: #333; }
+
+    .filters-row { display:flex; gap:8px; }
+    .filters-row > * { flex: 1 1 auto; }
+
+    fieldset { border: 1px solid #ccc; padding: 6px; border-radius: 4px; font-size: 12px; display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+    legend { font-size: 12px; padding: 0 4px; }
+
+    .year-filters { display:flex; gap:8px; flex-wrap:wrap; }
+
+    .totals-row { font-weight: bold; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+
+<h2>CSV Summary Tool</h2>
+
+<div id="controls">
+  <!-- Column 1: File -->
+  <section>
+    <label><strong>Choose File</strong></label>
+    <input type="file" id="csvFile" accept=".csv" />
+	<label><strong>Download current work orders into CSV File</strong></label>
+    <button class="btn-primary" 
+      onclick="window.open('https://www.avalon-estates.com/admin2/requestmanager/export.php?act=export&category=1&status=0&staffid=&begin=01%2F01%2F2025&end=&submit=Submit', '_blank');">
+      Download Latest 2025 Work Orders
+    </button>
+	<button class="btn-primary" 
+      onclick="window.open('https://www.avalon-estates.com/admin2/requestmanager/export.php?act=export&category=1&status=0&staffid=&begin=&end=&submit=Submit', '_blank');">
+      Download All Work Orders
+    </button>
+  </section>
+
+  <!-- Column 2: Summary -->
+  <section>
+    <label><strong>Summary Column(s)</strong></label>
+    <div class="summary-row">
+      <select id="summaryColumns" multiple></select>
+      <div class="move-controls">
+        <button type="button" class="btn-move" onclick="moveOption('up')">▲</button>
+        <button type="button" class="btn-move" onclick="moveOption('down')">▼</button>
+      </div>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <button type="button" class="btn-ghost" onclick="selectAllSummary()">Select All</button>
+      <button type="button" class="btn-ghost" onclick="clearSummary()">Clear</button>
+    </div>
+  </section>
+
+  <!-- Column 3: Filters -->
+  <section>
+    <label><strong>Filter</strong></label>
+    <div class="filters-row">
+      <select id="filterColumn"></select>
+      <input type="text" id="filterValue" placeholder="Value (substring)" />
+    </div>
+
+    <label><strong>Date Column</strong></label>
+    <select id="dateColumn" onchange="populateYearCheckboxes()"></select>
+
+    <fieldset>
+      <legend>Grouping</legend>
+      <label><input type="radio" name="groupMode" value="none" checked> None</label>
+      <label><input type="radio" name="groupMode" value="age"> Age (&lt;30 / 30+)</label>
+      <label><input type="radio" name="groupMode" value="month"> Monthly</label>
+	  <label><input type="radio" name="groupMode" value="year"> Yearly</label>
+      <div class="year-filters" id="yearFilters"></div>
+    </fieldset>
+
+    <div style="display:flex; gap:8px; margin-top:6px;">
+      <button class="btn-success" onclick="generateSummary()">Generate</button>
+      <button class="btn-primary" onclick="downloadCSV()">Download CSV</button>
+    </div>
+  </section>
+</div>
+
+<h3>Summary Output:</h3>
+<div id="summaryTable"></div>
+
+<script>
+function parseCSV(csv, delimiter = ",") {
+  const pattern = new RegExp(("(\\" + delimiter + "|\\r?\\n|\\r|^)" +
+    "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" + "([^\"\\" + delimiter + "\\r\\n]*))"), "gi");
+  const rows = [[]];
+  let matches;
+  while ((matches = pattern.exec(csv))) {
+    const matchedDelimiter = matches[1];
+    if (matchedDelimiter.length && matchedDelimiter !== delimiter) rows.push([]);
+    let value = matches[2] ? matches[2].replace(/""/g, '"') : matches[3];
+    rows[rows.length - 1].push(value);
+  }
+  return rows.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ""));
+}
+
+let csvData = [], headers = [], ticId = [];
+// Get the full URL of this execution for any queries in the javascript
+console.log(`summary-15.html  version 15.1`);
+let fullUrl = window.location.href;
+console.log(`The full URL is: ${fullUrl}`);
+// Get just the URL path
+let urlPath = window.location.pathname;
+console.log(`The URL path is: ${urlPath}`);
+
+//retrieve work order ticket number and ID
+tryFetchTicIdList('tic-id.json');
+
+document.getElementById('csvFile').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const rows = parseCSV(ev.target.result);
+    const rawHeaders = rows[0].map(h => String(h || ""));
+    headers = rawHeaders.map((h, i) => rawHeaders.indexOf(h) !== i ? `${h||'Column'}-${i}` : (h||`Column-${i}`));
+    csvData = rows.slice(1).map(row => {
+      const obj = {}; headers.forEach((h,i)=>obj[h]=row[i]||""); return obj;
+    });
+    populateColumnSelectors(headers);
+  };
+  reader.readAsText(file);
+});
+
+// ----------------- Ticket ID file list attempt -----------------
+function tryFetchTicIdList(jsonName){
+ console.log('tryFetchTicIdList:  file name ${jsonName}');
+ //let jsonName = 'tic-id.json';
+ if ( fullUrl.toLowerCase().startsWith("http") && fullUrl.toLowerCase().includes("/workspace/") ) {
+		// looks like we are using the workspace sever so set name 
+		jsonName = '/workspace/tic-id.json';
+	}
+ if ( fullUrl.toLowerCase().startsWith("file:") ) {
+	// if we loaded html from a file the CORS policy won't allow local file access
+	// so we'll just simulate a list for demo purposes and render files list
+	console.log('Simulating JSON file retrieval for demo purpose');
+	ticId = ["KL64582-3237", "NQ65533-3236", "LH77257-3221"];
+  } else {
+  // assume server may provide /tic-id.json (array of strings)
+  console.log(`tryFetchTicIdList: Fetch file ${jsonName}`);
+  fetch(jsonName, { cache: 'reload' }).then(r=>{
+    console.log(`r.ok=${r.ok}`);
+    if(!r.ok) throw new Error(`no file ${jsonName}`);
+    return r.json();
+  }).then(list=>{
+    console.log('tryFetchTicIdList: check list to see if array');
+    if(Array.isArray(list)){
+      ticId = list;
+	  console.log(`tryFetchTicIdList: array size is ${list.length}`);
+    }
+  }).catch(err=>{
+	console.error('tryFetchTicIdList: Fetch error:', err)
+	console.log(`tryFetchTicIdList: error retrieving ${jsonName} file: ${err}`);
+  });
+  }
+}
+
+function populateColumnSelectors(cols) {
+  ['filterColumn','summaryColumns','dateColumn'].forEach(id=>{
+    const sel=document.getElementById(id); sel.innerHTML="";
+    cols.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;sel.appendChild(o);});
+  });
+
+  // Optionally pre-select the first filter and date columns
+  if (cols.length) {
+    document.getElementById('filterColumn').selectedIndex = 0;
+    document.getElementById('dateColumn').selectedIndex = 0;
+    // Generate year checkboxes immediately for the selected date column
+    populateYearCheckboxes();
+  }
+}
+
+function moveOption(dir) {
+  const sel=document.getElementById("summaryColumns"), opts=[...sel.options];
+  if(dir==="up"){
+    for(let i=1;i<opts.length;i++){if(opts[i].selected&&!opts[i-1].selected){sel.insertBefore(opts[i],opts[i-1]);}}
+  } else {
+    for(let i=opts.length-2;i>=0;i--){if(opts[i].selected&&!opts[i+1].selected){sel.insertBefore(opts[i],opts[i+1].nextSibling);}}
+  }
+}
+function selectAllSummary(){[...document.getElementById('summaryColumns').options].forEach(o=>o.selected=true);}
+function clearSummary(){[...document.getElementById('summaryColumns').options].forEach(o=>o.selected=false);}
+
+function populateYearCheckboxes() {
+  const dateCol=document.getElementById("dateColumn").value, years=new Set();
+  csvData.forEach(r=>{
+    const d=new Date(r[dateCol]); if(!isNaN(d)) years.add(d.getFullYear());
+  });
+  const yDiv=document.getElementById("yearFilters"); yDiv.innerHTML="";
+  [...years].sort().forEach(y=>{
+    const lbl=document.createElement("label");
+    lbl.innerHTML=`<input type="checkbox" value="${y}" checked> ${y}`;
+    yDiv.appendChild(lbl);
+  });
+}
+
+function generateSummary() {
+  const summaryCols=[...document.getElementById("summaryColumns").selectedOptions].map(o=>o.value);
+  if(!summaryCols.length){alert("Select summary columns");return;}
+  const filterCol=document.getElementById("filterColumn").value;
+  const filterVal=document.getElementById("filterValue").value.trim().toLowerCase();
+  const dateCol=document.getElementById("dateColumn").value;
+  const groupMode=document.querySelector("input[name=groupMode]:checked").value;
+  const selectedYears=[...document.querySelectorAll("#yearFilters input:checked")].map(cb=>parseInt(cb.value));
+  const now=new Date(), summaryMap={};
+
+  csvData.forEach(row=>{
+    if(filterVal){const f=(row[filterCol]||"").toLowerCase(); if(!f.includes(filterVal))return;}
+    if(selectedYears.length&&dateCol){const d=new Date(row[dateCol]); if(!isNaN(d)&&!selectedYears.includes(d.getFullYear())) return;}
+
+    const keyParts=summaryCols.map(c=>row[c]||"Unknown"), comp=keyParts.join("|");
+    let gk="Total";
+    if(groupMode==="age"){const d=new Date(row[dateCol]);if(!isNaN(d)){const days=(now-d)/(1000*60*60*24);gk=days>=30?"30+ Days":"<30 Days";} else gk="Invalid Date";}
+    if(groupMode==="month"){const d=new Date(row[dateCol]); if(!isNaN(d)){gk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;} else gk="Invalid Date";}
+	if(groupMode==="year"){const d=new Date(row[dateCol]); if(!isNaN(d)){gk=`${d.getFullYear()}`;} else gk="Invalid Date";}
+    if(!summaryMap[comp])summaryMap[comp]={keyParts,counts:{},total:0};
+    summaryMap[comp].counts[gk]=(summaryMap[comp].counts[gk]||0)+1; summaryMap[comp].total++;
+  });
+  renderSummaryTable(summaryMap,summaryCols,groupMode);
+}
+
+function openWorkOrderPopupold(idString) {
+  if (!idString || typeof idString !== 'string') {
+    console.error("Error: openWorkOrderPopup: A valid string ID for Ticket # must be provided.");
+    return;
+  }
+  const url = `https://www.avalon-estates.com/admin2/requestmanager/print_wo.php?id=${idString}`;
+  const windowFeatures = "width=600,height=600,scrollbars=yes,resizable=yes,left=10,top=10";
+  window.open(url, '_blank', windowFeatures);
+}
+
+function openWorkOrderPopup(ticString, idString) {
+  // Check if the passed in string is a valid value
+  if (!ticString || typeof ticString !== 'string') {
+    console.error("Error: openWorkOrderPopup: A valid string ID for Ticket # must be provided.");
+    return;
+  }
+  let url = "";
+  if (!idString || typeof idString !== 'string' || idString == '0') {
+		// Construct the full URL with the provided ID to PRINT work order
+		url = `https://www.avalon-estates.com/admin2/requestmanager/print_wo.php?id=${ticString}`;
+	} else {
+		url = `https://www.avalon-estates.com/forms/?view=staffedit&id=${idString}&tic=${ticString}`;
+  }   
+  //console.log(`url="${url}"`);
+  // Define window features (size, scrollbars, etc.)
+  const windowFeatures = "width=600,height=600,scrollbars=yes,resizable=yes,left=10,top=10";
+  // Open the new popup window
+  window.open(url, '_blank', windowFeatures);
+}
+
+function renderSummaryTable(summaryMap, summaryCols, groupMode) {
+  // Collect all grouping keys
+  let gks = new Set();
+  Object.values(summaryMap).forEach(e => Object.keys(e.counts).forEach(k => gks.add(k)));
+  gks = [...gks].sort();
+
+  // Table header
+  let html = "<table><tr>" + summaryCols.map(c => `<th>${c}</th>`).join("");
+  if (groupMode !== "none") gks.forEach(g => html += `<th>${g}</th>`);
+  html += "<th>Total</th></tr>";
+
+  const entries = Object.values(summaryMap)
+    .sort((a, b) => a.keyParts.join().localeCompare(b.keyParts.join()));
+
+  // Compute rowspans for pivot-style table
+  const rowspans = summaryCols.map(() => Array(entries.length).fill(1));
+  summaryCols.forEach((_, colIndex) => {
+    let i = 0;
+    while (i < entries.length) {
+      let j = i + 1;
+      while (j < entries.length && entries[i].keyParts[colIndex] === entries[j].keyParts[colIndex]) j++;
+      rowspans[colIndex][i] = j - i;
+      for (let k = i + 1; k < j; k++) rowspans[colIndex][k] = 0;
+      i = j;
+    }
+  });
+
+  // Initialize totals
+  const totals = { total: 0 };
+  gks.forEach(g => totals[g] = 0);
+
+  // Render table rows
+  entries.forEach((entry, rowIndex) => {
+    html += "<tr>";
+    summaryCols.forEach((_, colIndex) => {
+      if (rowspans[colIndex][rowIndex] > 0) {
+        let cellValue = entry.keyParts[colIndex];
+
+        // Ticket clickab
+        if (/^ticket$/i.test(summaryCols[colIndex])) {
+          const safeVal = cellValue.replace(/'/g, "\\'");
+		  let ticketId = "0";
+		  ticAndId = ticId.find(entry => entry.substring(0, 7) === safeVal);
+		  if (ticAndId === undefined ) { 
+				ticketId = "0";
+				cellValue = `<a href="javascript:void(0)" onclick="openWorkOrderPopup('${safeVal},${ticAndId}')"><span style="color:blue;">${safeVal}</span></a>`;
+			  } else {
+				let parts = ticAndId.split("-");
+				ticketId = parts[1];
+				console.log(`safeVal=${safeVal}  ticketId=${ticketId}`);
+				// Change the color to green
+				cellValue = `<a href="javascript:void(0)" onclick="openWorkOrderPopup('${safeVal},${ticketId}')"><span style="color:green">${safeVal}</span></a>`;
+		  }          
+        } else {
+          //cellValue = escapeHtml(cellValue);
+        }
+		//console.log(cellValue);
+        html += `<td rowspan="${rowspans[colIndex][rowIndex]}">${cellValue}</td>`;
+      }
+    });
+
+    if (groupMode !== "none") {
+      gks.forEach(g => {
+        const v = entry.counts[g] || 0;
+        totals[g] += v;
+        html += `<td>${v}</td>`;
+      });
+    }
+
+    html += `<td>${entry.total}</td></tr>`;
+    totals.total += entry.total;
+  });
+
+  // Grand Total row
+  html += `<tr class="totals-row"><td colspan="${summaryCols.length}">Grand Total</td>`;
+  if (groupMode !== "none") gks.forEach(g => html += `<td>${totals[g]}</td>`);
+  html += `<td>${totals.total}</td></tr></table>`;
+
+  document.getElementById("summaryTable").innerHTML = html;
+}
+
+
+function downloadCSV(){
+  const t=document.querySelector("#summaryTable table"); if(!t){alert("No summary");return;}
+  const rows=[...t.rows].map(r=>[...r.cells].map(c=>'"'+c.textContent.replace(/"/g,'""')+'"').join(","));
+  const blob=new Blob([rows.join("\n")],{type:"text/csv"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url;a.download="summary.csv";a.click();URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

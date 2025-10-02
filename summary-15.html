@@ -188,7 +188,7 @@ function tryFetchTicIdList(jsonName){
 	// if we loaded html from a file the CORS policy won't allow local file access
 	// so we'll just simulate a list for demo purposes and render files list
 	console.log('Simulating JSON file retrieval for demo purpose');
-	ticId = ["KL64582-3237", "NQ65533-3236", "LH77257-3221"];
+	ticId = ["KL64582-3237", "NQ65533-3236", "LH77257-3221", "VX83546-3167"];
   } else {
   // assume server may provide /tic-id.json (array of strings)
   console.log(`tryFetchTicIdList: Fetch file ${jsonName}`);
@@ -348,13 +348,13 @@ function renderSummaryTable(summaryMap, summaryCols, groupMode) {
 		  ticAndId = ticId.find(entry => entry.substring(0, 7) === safeVal);
 		  if (ticAndId === undefined ) { 
 				ticketId = "0";
-				cellValue = `<a href="javascript:void(0)" onclick="openWorkOrderPopup('${safeVal},${ticAndId}')"><span style="color:blue;">${safeVal}</span></a>`;
+				cellValue = `<a href="javascript:void(0)" onclick="openWorkOrderPopup('${safeVal}','${ticketId}')"><span style="color:blue;">${safeVal}</span></a>`;
 			  } else {
 				let parts = ticAndId.split("-");
 				ticketId = parts[1];
 				console.log(`safeVal=${safeVal}  ticketId=${ticketId}`);
 				// Change the color to green
-				cellValue = `<a href="javascript:void(0)" onclick="openWorkOrderPopup('${safeVal},${ticketId}')"><span style="color:green">${safeVal}</span></a>`;
+				cellValue = `<a href="javascript:void(0)" onclick="openWorkOrderPopup('${safeVal}','${ticketId}')"><span style="color:green">${safeVal}</span></a>`;
 		  }          
         } else {
           //cellValue = escapeHtml(cellValue);

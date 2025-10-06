@@ -154,7 +154,13 @@
   value="Download latest 2025 Work Orders"
   onclick="window.open('https://www.avalon-estates.com/admin2/requestmanager/export.php?act=export&category=1&status=0&staffid=&begin=01%2F01%2F2025&end=&submit=Submit', '_blank');"
   style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: Arial, sans-serif;"
-> 
+>
+	<input
+  type="button"
+  value="Download All Work Orders"  
+  onclick="window.open('https://www.avalon-estates.com/admin2/requestmanager/export.php?act=export&category=1&status=0&staffid=&begin=&end=&submit=Submit', '_blank');"
+  style="padding: 10px 20px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; font-family: Arial, sans-serif;"
+> 	  
     <button id="toggle-controls" class="toggle-btn">Hide Controls</button>
     <div class="small-muted">Default table param: <code>?table=workorders</code></div>
   </div>
@@ -1266,3 +1272,4 @@ window.addEventListener('resize', ()=>{/* noop */});
 </body>
 
 </html>
+

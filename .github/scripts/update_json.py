@@ -6,7 +6,7 @@ with open('pending-ticket.json', 'r') as f:
     new_tickets = json.load(f).get('new_tickets', [])
 
 # Load existing ticket list
-with open('workspace/tic-id.json', 'r') as f:
+with open('tic-id.json', 'r') as f:
     ticket_list = json.load(f)
 
 # Add new tickets if they aren't already in the list
@@ -18,7 +18,7 @@ for ticket in new_tickets:
 
 # Save updated ticket list if changes were made
 if added:
-    with open('workspace/tic-id.json', 'w') as f:
+    with open('tic-id.json', 'w') as f:
         json.dump(ticket_list, f, indent=2)
     print(f"Added new tickets: {added}")
 else:

@@ -1,19 +1,25 @@
 import json
 import os
 
-# Load pending ticket
+# Load pending tickets
 with open('pending-ticket.json', 'r') as f:
-    new_ticket = json.load(f)['new_ticket']
+    new_tickets = json.load(f).get('new_tickets', [])
 
 # Load existing ticket list
 with open('workspace/tic-id.json', 'r') as f:
     ticket_list = json.load(f)
 
-# Update if new
-if new_ticket not in ticket_list:
-    ticket_list.append(new_ticket)
+# Add new tickets if they aren't already in the list
+added = []
+for ticket in new_tickets:
+    if ticket not in ticket_list:
+        ticket_list.append(ticket)
+        added.append(ticket)
+
+# Save updated ticket list if changes were made
+if added:
     with open('workspace/tic-id.json', 'w') as f:
         json.dump(ticket_list, f, indent=2)
-    print(f"Added new ticket: {new_ticket}")
+    print(f"Added new tickets: {added}")
 else:
-    print("Ticket already exists. No update needed.")
+    print("No new tickets to add.")

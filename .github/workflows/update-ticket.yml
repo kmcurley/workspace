@@ -20,14 +20,8 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: List files 1
-        run: ls -R  
-
       - name: Run update script
         run: python .github/scripts/update_json.py
-
-      - name: List files 2
-        run: ls -R
 
       - name: Commit changes
         run: |
@@ -36,5 +30,6 @@ jobs:
           git add tic-id.json
           git commit -m "Update tic-id.json with new ticket" || echo "No changes to commit"
           git push
+
 
 

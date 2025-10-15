@@ -191,7 +191,7 @@
 
 let csvData = [], headers = [], ticId = [], availableFiles = [];
 // Get the full URL of this execution for any queries in the javascript
-console.log(`summary-21.html  version 21.1`);
+console.log(`summary-22.html  version 22.1`);
 let fullUrl = window.location.href;
 console.log(`The full URL is: ${fullUrl}`);
 // Get just the URL path
@@ -622,18 +622,39 @@ function renderSummaryTable(summaryMap, summaryCols, groupMode) {
   const entries = Object.values(summaryMap)
     .sort((a, b) => a.keyParts.join().localeCompare(b.keyParts.join()));
 
-  // Compute rowspans for pivot-style table
-  const rowspans = summaryCols.map(() => Array(entries.length).fill(1));
-  summaryCols.forEach((_, colIndex) => {
-    let i = 0;
-    while (i < entries.length) {
-      let j = i + 1;
-      while (j < entries.length && entries[i].keyParts[colIndex] === entries[j].keyParts[colIndex]) j++;
-      rowspans[colIndex][i] = j - i;
-      for (let k = i + 1; k < j; k++) rowspans[colIndex][k] = 0;
-      i = j;
+// Compute rowspans for pivot-style table
+const rowspans = summaryCols.map(() => Array(entries.length).fill(1));
+
+summaryCols.forEach((_, colIndex) => {
+  let i = 0;
+  while (i < entries.length) {
+    let j = i + 1;
+
+    // The inner loop must check two conditions:
+    // 1. The current column value is the same (entries[i].keyParts[colIndex] === entries[j].keyParts[colIndex])
+    // 2. ALL previous column values (from 0 to colIndex - 1) are also the same between row i and row j.
+    while (
+      j < entries.length && 
+      entries[i].keyParts[colIndex] === entries[j].keyParts[colIndex] &&
+      (colIndex === 0 || summaryCols.slice(0, colIndex).every((_, prevColIndex) => 
+        entries[i].keyParts[prevColIndex] === entries[j].keyParts[prevColIndex]
+      ))
+    ) {
+      j++;
     }
-  });
+
+    // Assign the determined rowspan
+    rowspans[colIndex][i] = j - i;
+    
+    // Set rowspan to 0 for the rows that are "consumed" by the rowspan
+    for (let k = i + 1; k < j; k++) {
+      rowspans[colIndex][k] = 0;
+    }
+    
+    // Move to the next block
+    i = j;
+  }
+});
 
   // Initialize totals
   const totals = { total: 0 };
@@ -646,7 +667,7 @@ function renderSummaryTable(summaryMap, summaryCols, groupMode) {
       if (rowspans[colIndex][rowIndex] > 0) {
         let cellValue = entry.keyParts[colIndex];
 
-        // Ticket clickab
+        // Ticket clickable
         if (/^ticket$/i.test(summaryCols[colIndex])) {
           const safeVal = cellValue.replace(/'/g, "\\'");
 		  let ticketId = "0";
@@ -666,6 +687,7 @@ function renderSummaryTable(summaryMap, summaryCols, groupMode) {
         }
 		//console.log(cellValue);
         html += `<td rowspan="${rowspans[colIndex][rowIndex]}">${cellValue}</td>`;
+		//html += `<td rowspan="1">${cellValue}</td>`;
       }
     });
 
@@ -679,6 +701,7 @@ function renderSummaryTable(summaryMap, summaryCols, groupMode) {
 
     html += `<td>${entry.total}</td></tr>`;
     totals.total += entry.total;
+	//console.log(`${html}`);
   });
 
   // Grand Total row
@@ -690,12 +713,116 @@ function renderSummaryTable(summaryMap, summaryCols, groupMode) {
 }
 
 
-function downloadCSV(){
+function downloadCSVold(){
   const t=document.querySelector("#summaryTable table"); if(!t){alert("No summary");return;}
   const rows=[...t.rows].map(r=>[...r.cells].map(c=>'"'+c.textContent.replace(/"/g,'""')+'"').join(","));
   const blob=new Blob([rows.join("\n")],{type:"text/csv"}), url=URL.createObjectURL(blob), a=document.createElement("a");
   a.href=url;a.download="summary.csv";a.click();URL.revokeObjectURL(url);
 }
+
+function downloadCSV() {
+  const table = document.querySelector("#summaryTable table");
+  if (!table) {
+    alert("No summary table found!");
+    return;
+  }
+
+  // Array to hold the final, flattened CSV rows
+  const csvRows = [];
+
+  // Array to track the current value and remaining span of the "virtual" columns (from previous rowspans)
+  const virtualColValues = [];
+
+  // --- 1. Process Header ---
+  const headerRow = table.querySelector("thead tr");
+  if (headerRow) {
+    // Note: Colspan in the header is usually fine, but it might lead to merged headers in the CSV.
+    // For simplicity, we just extract the text content here.
+    const headerCells = [...headerRow.cells].map(c => `"${c.textContent.replace(/"/g, '""')}"`);
+    csvRows.push(headerCells.join(","));
+  }
+
+  // --- 2. Process Body Rows ---
+  const bodyRows = [...table.querySelectorAll("tbody tr")];
+  
+  bodyRows.forEach((row, rowIndex) => {
+    const outputRow = [];
+    const cellElements = [...row.cells];
+    let cellIndex = 0; // Tracks the index of the PHYSICAL cell element
+
+    // Iterate through the maximum logical column count required (based on the previous row's state)
+    // We assume the final number of columns is established by the end of the first few rows.
+    
+    // Determine the maximum logical columns to process in this row.
+    // This is a reasonable guess: total virtual slots + remaining physical cells.
+    const maxLogicalCols = virtualColValues.length + cellElements.length;
+
+    for (let logicalColIndex = 0; logicalColIndex < maxLogicalCols; logicalColIndex++) {
+        
+        // A. Handle Rowspan (Filling Gaps)
+        // Check if the current logical column is currently being spanned by a previous row's cell
+        if (logicalColIndex < virtualColValues.length && virtualColValues[logicalColIndex].span > 0) {
+            outputRow.push(`"${virtualColValues[logicalColIndex].value.replace(/"/g, '""')}"`);
+            virtualColValues[logicalColIndex].span--; // Decrement the remaining span
+        
+        } 
+        // B. Handle Physical Cell (New Data)
+        else if (cellIndex < cellElements.length) {
+            const cell = cellElements[cellIndex];
+            const value = cell.textContent;
+            
+            // 1. Get Colspan
+            const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+            
+            // 2. Insert the cell's content
+            outputRow.push(`"${value.replace(/"/g, '""')}"`);
+
+            // 3. Handle Colspan: Insert blank columns to the right if colspan > 1
+            if (colspan > 1) {
+                for (let k = 1; k < colspan; k++) {
+                    outputRow.push(""); // Insert an empty string for the merged column
+                }
+                // Advance the logical column index by (colspan - 1) to skip the blank columns
+                logicalColIndex += (colspan - 1);
+            }
+
+            // 4. Handle Rowspan: Store cell for future rows
+            const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
+            if (rowspan > 1) {
+                // Store the value and remaining span (rowspan - 1)
+                // Use the starting logicalColIndex as the key for storage
+                if (logicalColIndex < virtualColValues.length) {
+                    virtualColValues[logicalColIndex] = { value: value, span: rowspan - 1 };
+                } else {
+                    virtualColValues.push({ value: value, span: rowspan - 1 });
+                }
+            }
+            
+            cellIndex++; // Move to the next physical cell element
+        }
+        // C. If neither A nor B, the row is shorter than expected (e.g., in a total row)
+        // This is where things get tricky in dynamic tables. For a fixed total column, 
+        // we generally rely on the Colspan logic to pad the front, and the Rowspan logic 
+        // to determine the maximum width.
+    }
+    
+    // Add the completed, flattened row to the CSV data
+    csvRows.push(outputRow.join(","));
+  });
+
+  // --- 3. Create and Download the CSV ---
+  const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  
+  a.href = url;
+  a.download = "summary.csv";
+  a.click();
+  
+  // Clean up
+  URL.revokeObjectURL(url);
+}
+
 </script>
 </body>
 </html>

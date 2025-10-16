@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>PDF Page to Image</title>
+</head>
+<body>
+
+<h1>PDF Page to Image</h1>
+
+<div>
+  <input type="file" accept=".pdf" id="pdfFile" accept="application/pdf" /><br>
+  <button id="prev" type="button">Previous</button>
+  <button id="next" type="button">Next</button>
+  &nbsp; &nbsp;
+  <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
+  &nbsp; &nbsp;
+  <button id="downloadBtn">Download as JPG</button>
+</div>
+
+<div>
+  <canvas id="the-canvas" style="border: 1px solid black; direction: ltr;"></canvas>
+</div>
+
+<script src="../build/pdf.mjs" type="module"></script>
+
+<script id="script" type="module">
+  //
+  // If absolute URL from the remote server is provided, configure the CORS
+  // header on that server.
+  //
+  var url = './compressed.tracemonkey-pldi-09.pdf';
+
+  //
+  // In cases when the pdf.worker.js is located at the different folder than the
+  // PDF.js's one, or the PDF.js is executed via eval(), the workerSrc property
+  // shall be specified.
+  //
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '../build/pdf.worker.mjs';
+
+  var fileName = null,
+	  pdfDoc = null,
+      pageNum = 1,
+      pageRendering = false,
+      pageNumPending = null,
+      scale = 0.8,
+      canvas = document.getElementById('the-canvas'),
+      ctx = canvas.getContext('2d');
+
+  /**
+   * Get page info from document, resize canvas accordingly, and render page.
+   * @param num Page number.
+   */
+  function renderPage(num) {
+    pageRendering = true;
+    // Using promise to fetch the page
+    pdfDoc.getPage(num).then(function(page) {
+      var viewport = page.getViewport({ scale: scale, });
+      // Support HiDPI-screens.
+      var outputScale = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = Math.floor(viewport.width) + "px";
+      canvas.style.height =  Math.floor(viewport.height) + "px";
+
+      var transform = outputScale !== 1
+        ? [outputScale, 0, 0, outputScale, 0, 0]
+        : null;
+
+      // Render PDF page into canvas context
+      var renderContext = {
+        canvasContext: ctx,
+        transform: transform,
+        viewport: viewport,
+      };
+      var renderTask = page.render(renderContext);
+
+      // Wait for rendering to finish
+      renderTask.promise.then(function () {
+        pageRendering = false;
+        if (pageNumPending !== null) {
+          // New page rendering is pending
+          renderPage(pageNumPending);
+          pageNumPending = null;
+        }
+      });
+    });
+
+    // Update page counters
+    document.getElementById('page_num').textContent = num;
+  }
+
+  /**
+   * If another page rendering in progress, waits until the rendering is
+   * finished. Otherwise, executes rendering immediately.
+   */
+  function queueRenderPage(num) {
+    if (pageRendering) {
+      pageNumPending = num;
+    } else {
+      renderPage(num);
+    }
+  }
+
+  /**
+   * Displays previous page.
+   */
+  function onPrevPage() {
+    if (pageNum <= 1) {
+      return;
+    }
+    pageNum--;
+    queueRenderPage(pageNum);
+  }
+  document.getElementById('prev').addEventListener('click', onPrevPage);
+
+  /**
+   * Displays next page.
+   */
+  function onNextPage() {
+    if (pageNum >= pdfDoc.numPages) {
+      return;
+    }
+    pageNum++;
+    queueRenderPage(pageNum);
+  }
+  
+  function getFileNameWithoutExtension(url) {
+	const parts = url.split('/').pop().split('.');
+	parts.pop(); // remove the extension
+	return parts.join('.');
+  }
+  
+    document.getElementById('downloadBtn').addEventListener('click', function () {
+      const jpgData = canvas.toDataURL('image/jpeg');
+      const link = document.createElement('a');
+      link.href = jpgData;
+	  console.log(`pdfFile=${pdfFile}`);
+	  const outName = getFileNameWithoutExtension(fileName) + "-page-" + pageNum + ".jpeg";
+	  console.log(`outName(${outName})`);
+      link.download = outName;
+      link.click();
+    });
+	
+  document.getElementById('next').addEventListener('click', onNextPage);
+
+  let fileURL = '';
+  document.getElementById('pdfFile').addEventListener('change', async function (e) {
+		/**
+		* Asynchronously downloads PDF.
+		*/
+		const file = e.target.files[0];
+        if (!file) return;
+		fileURL = URL.createObjectURL(file);
+		fileName = file.name;
+		console.log("PDF URL:", fileURL);
+		var loadingTask = pdfjsLib.getDocument(fileURL);
+		pdfDoc = await loadingTask.promise;
+		document.getElementById('page_count').textContent = pdfDoc.numPages;
+		// Initial/first page rendering
+		pageNum = 1;
+		renderPage(pageNum);
+		//renderPage(1);
+	})	
+</script>
+
+</body>
+</html>

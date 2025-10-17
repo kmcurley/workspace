@@ -543,6 +543,8 @@ function populateAddressSelectors(cols) {
 }
 
 function generateSummary() {
+  //update work order ticket number and ID in case they were updated	
+  tryFetchTicIdList('tic-id.json');
   const groupMode=document.querySelector("input[name=groupMode]:checked").value;
   console.log(`savedGroupMode=${savedGroupMode}  groupMode=${groupMode}`);
   if(groupMode==="age30+" && savedGroupMode !== "age30+"){

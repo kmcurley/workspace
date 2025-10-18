@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PDF Viewer with page download as JPEG</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    #pdfCanvas { border: 1px solid #ccc; display: block; margin-bottom: 10px; }
+    #controls {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    input[type="number"] { width: 60px; }
+  </style>
+</head>
+<body>
+  <h2>PDF Viewer with Editable Page Jump & JPG Export</h2>
+  <input type="file" id="pdfFile" accept="application/pdf" />
+
+  <div id="controls">
+    <button id="prevBtn">⬅ Prev</button>
+    <label>Page:</label>
+    <input type="number" id="pageInput" min="1" />
+    <span id="totalPages">of 1</span>
+    <button id="nextBtn">Next ➡</button>
+    <button id="downloadBtn">Download as JPG</button>
+  </div>
+
+  <canvas id="pdfCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('pdfCanvas');
+    const ctx = canvas.getContext('2d');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const pageInput = document.getElementById('pageInput');
+    const totalPagesSpan = document.getElementById('totalPages');
+	let fileName = null;
+
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 0;
+    const scale = 1.5;
+
+    async function renderPage(pageNum) {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pageInput.value = pageNum;
+      totalPagesSpan.textContent = `of ${totalPages}`;
+      prevBtn.disabled = pageNum <= 1;
+      nextBtn.disabled = pageNum >= totalPages;
+    }
+
+    document.getElementById('pdfFile').addEventListener('change', async function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+	  fileName = file.name;
+      const reader = new FileReader();
+      reader.onload = async function () {
+        const typedArray = new Uint8Array(this.result);
+        pdfDoc = await pdfjsLib.getDocument({ data: typedArray }).promise;
+        totalPages = pdfDoc.numPages;
+        currentPage = 1;
+        pageInput.max = totalPages;
+        renderPage(currentPage);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage(currentPage);
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPage(currentPage);
+      }
+    });
+
+    pageInput.addEventListener('change', () => {
+      const targetPage = parseInt(pageInput.value);
+      if (targetPage >= 1 && targetPage <= totalPages) {
+        currentPage = targetPage;
+        renderPage(currentPage);
+      } else {
+        alert(`Please enter a page number between 1 and ${totalPages}`);
+        pageInput.value = currentPage;
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const jpgData = canvas.toDataURL('image/jpeg');
+      const link = document.createElement('a');
+      link.href = jpgData;
+      link.download = getFileName(fileName) + '#' + currentPage + '.jpg';
+      link.click();
+    });
+	
+	function getFileName(url) {
+		// get filename from input file name without file extension
+		const parts = url.split('/').pop().split('.');
+		parts.pop(); // remove the extension
+		return parts.join('.');
+	}
+  </script>
+</body>
+</html>

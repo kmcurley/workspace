@@ -128,7 +128,7 @@
 </head>
 <body>
 
-<h2>CSV Summary Tool (24.1)</h2>
+<h2>CSV Summary Tool (24.2)</h2>
 
 <div id="controls">
   <!-- Column 1: File -->
@@ -217,7 +217,7 @@
 
 let csvData = [], headers = [], ticId = [], availableFiles = [];
 // Get the full URL of this execution for any queries in the javascript
-console.log(`summary-24.html  version 24.1`);
+console.log(`summary-24.html  version 24.2`);
 let fullUrl = window.location.href;
 console.log(`The full URL is: ${fullUrl}`);
 // Get just the URL path
@@ -708,7 +708,6 @@ summaryCols.forEach((_, colIndex) => {
 			  if (ticAndId === undefined ) { 
 				ticketId = "0";
 				cellValue = `<a href="javascript:void(0)" onclick="openWorkOrderPopup('${safeVal}','${ticketId}')"><span style="color:blue;">${safeVal}</span></a>`;
-				cellValue = `<a href="https://www.avalon-estates.com/admin2/requestmanager/print_wo.php?id=${ticString}"><span style="color:blue;">${safeVal}</span></a>`;
 			  } else {
 				let parts = ticAndId.split("-");
 				ticketId = parts[1];

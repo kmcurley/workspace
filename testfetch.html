@@ -8,8 +8,9 @@ const fileStatus = document.getElementById('fileStatus');
 
 async function checkFileExists(filename) {
   try {
-    //const response = await fetch(`/check-file?filename=${encodeURIComponent(filename)}`);
-	const response = await fetch(`https://kmcurley.github.io/workspace/csv-list.json`);
+    console.log(`filename=${filename}   encode=${encodeURIComponent(filename)}`);
+    const response = await fetch(`https://kmcurley.github.io/workspace/${encodeURIComponent(filename)}`);
+	//const response = await fetch(`https://kmcurley.github.io/workspace/csv-list.json`);
     const result = await response.json();
 	console.log(`result.exists=${result.exists}`);
     if (result.exists) {
@@ -59,3 +60,4 @@ checkFileExists('bocce-schedule-2025.csv'); // Replace with dynamic filename if 
 </script>
 
 </html>
+

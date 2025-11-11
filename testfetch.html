@@ -109,6 +109,7 @@ function tryLoadFile(url){
 	  output.value = rows.join('\n');
       return;
     } catch(e){
+	  console.log(`tryLoadFile error: ${e}`);	
       const isHidden = inputContainer.style.display === 'none';
 	  inputContainer.style.display = isHidden ? 'block' : 'none';
       fileStatus.textContent = 'Please upload a file.';
@@ -170,4 +171,5 @@ console.log("Calling checkFileExists...");
 //checkFileExists('schedule.csv'); // Replace with dynamic filename if needed
 tryLoadFile('bocce-schedule-2025.csv');
 </script>
+
 </html>

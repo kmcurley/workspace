@@ -103,7 +103,7 @@ function tryLoadFile(url){
       if(!res.ok) throw new Error('fetch failed ' + res.status);
       const text = await res.text();
 	  inputContainer.disabled = true;
-      fileStatus.textContent = `Using server-side file: ${csvFile}`;
+      fileStatus.textContent = `Using server-side file: ${url}`;
 	  const rows = parseCSV(text);
 	  console.log(rows);
 	  output.value = rows.join('\n');
@@ -173,3 +173,4 @@ tryLoadFile('bocce-schedule-2025.csv');
 </script>
 
 </html>
+

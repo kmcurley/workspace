@@ -112,7 +112,7 @@
         function convert12HourTo24Hour(timeStr) {
             const parts = timeStr.toUpperCase().match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/);
             if (!parts) return null;
-
+			
             let hour = parseInt(parts[1], 10);
             const minute = parts[2];
             const ampm = parts[3];
@@ -122,6 +122,7 @@
             } else if (ampm === 'AM' && hour === 12) {
                 hour = 0; 
             }
+			
             return `${String(hour).padStart(2, '0')}:${minute}`;
         }
 
@@ -448,6 +449,13 @@ END:VEVENT`;
 
                 icsContent += `
 BEGIN:VEVENT
+DTSTART:${dateTimeStart}
+DTEND:${dateTimeEnd}
+SUMMARY:${summary}
+END:VEVENT`;
+
+                const icsContentOLD += `
+BEGIN:VEVENT
 UID:${game.id}-${game.date}-${game.time24}@gameschedule.com
 DTSTART:${dateTimeStart}
 DTEND:${dateTimeEnd}
@@ -546,5 +554,4 @@ function downloadICS(content, filename = 'games.ics') {
     </script>
 
 </body>
-
 </html>

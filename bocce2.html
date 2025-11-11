@@ -96,14 +96,12 @@
 				if(!res.ok) throw new Error('fetch failed ' + res.status);
 				const text = await res.text();
 				inputContainer.disabled = true;
-				fileStatus.textContent = `Using server-side file: ${url}`;
 				parseCSV(text);
 				return;
 			} catch(e){
 				console.log(`tryLoadFile error: ${e}`);
 				const isHidden = inputContainer.style.display === 'none';
 				inputContainer.style.display = isHidden ? 'block' : 'none';
-				fileStatus.textContent = 'Please upload a file.';
 				return;
 				}
 			})();
@@ -548,4 +546,5 @@ function downloadICS(content, filename = 'games.ics') {
     </script>
 
 </body>
+
 </html>

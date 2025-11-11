@@ -1,0 +1,155 @@
+{
+  "teams": [
+    {
+      "team": 1,
+      "members": [
+        "Kevin Curley (C)",
+        "Annette Pergolizzi",
+        "Eileen Rosen",
+        "Bernice Ross",
+        "Charlene Thompson"
+      ]
+    },
+    {
+      "team": 2,
+      "members": [
+        "Cindy Curley",
+        "Ken Gerb (C)",
+        "Hank Greenber",
+        "Irv Rudowitz",
+        "Edward Zwrin"
+      ]
+    },
+    {
+      "team": 3,
+      "members": [
+        "Eli Kabrun",
+        "Ron Nogid",
+        "Linda Simms",
+        "Matt Tricarico (C)"
+      ]
+    },
+    {
+      "team": 4,
+      "members": [
+        "Joan Hasluck",
+        "Burt Klein (C)",
+        "Maria Murray",
+        "Fredda Nogid",
+        "Jerry Weisman"
+      ]
+    },
+    {
+      "team": 5,
+      "members": [
+        "Sheldon Aronson",
+        "Peter Gardner (C)",
+        "Eric Pappalardi",
+        "Mark Rosen"
+      ]
+    },
+    {
+      "team": 6,
+      "members": [
+        "Gerri Drago",
+        "Leonard Freeman (C)",
+        "Elise Levine",
+        "Sherrie Schram"
+      ]
+    },
+    {
+      "team": 7,
+      "members": [
+        "Howard Saltzman (C)",
+        "Dena Goldberg",
+        "Carol Haft",
+        "Debbie Hague",
+        "Ron Radwin"
+      ]
+    },
+    {
+      "team": 8,
+      "members": [
+        "Rick Doctor",
+        "Stan Einhorn",
+        "Salma Facio",
+        "Stan Silverberg (C)"
+      ]
+    },
+    {
+      "team": 9,
+      "members": [
+        "Jerry Bellse",
+        "Renato Facio (C)",
+        "Josephine Pappalardi",
+        "Stephanie Pessenda"
+      ]
+    },
+    {
+      "team": 10,
+      "members": [
+        "Ed Fishman",
+        "Glenn Haft (C)",
+        "Robert Steffen",
+        "Gary Thompson"
+      ]
+    },
+    {
+      "team": 11,
+      "members": [
+        "Jon Basset",
+        "Diana DiPrima",
+        "Stephanie Klein",
+        "Abby Radwin (C)",
+        "Judy Selig"
+      ]
+    },
+    {
+      "team": 12,
+      "members": [
+        "Steve Askinas (C)",
+        "Robin Giligan",
+        "Nikki Grabisch",
+        "Lloyd Hasluck",
+        "Ron Holzman"
+      ]
+    },
+    {
+      "team": 13,
+      "members": [
+        "Mariann Gardner",
+        "Joan Madonna",
+        "Stewart Schram (C)",
+        "Myra Slomiak"
+      ]
+    },
+    {
+      "team": 14,
+      "members": [
+        "Jim Giljgan",
+        "Pam Holzman",
+        "Joel Lubin (C)",
+        "Greg Smith"
+      ]
+    },
+    {
+      "team": 15,
+      "members": [
+        "Mark Borowsky (C)",
+        "Mark Goldman",
+        "Craig Goodwin",
+        "Marion Israel",
+        "Lois Lubell"
+      ]
+    },
+    {
+      "team": 16,
+      "members": [
+        "James Cantore",
+        "Marshall Goldstein",
+        "Marc Lurie",
+        "Ralph Susca (C)"
+      ]
+    }
+  ]
+}

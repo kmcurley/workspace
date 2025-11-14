@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="This page provides a dynamic team viewer with modal popups and interactive roster display. It read JSON and CSV files.">
+	<link rel="icon" type="image/png" href="AV-BocceBall.png">
+    <title>Avalon Estates Bocce Schedule</title>
+    <style>
+        /* Basic Table Styling for readability */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .game-row {
+            cursor: pointer;
+        }
+        .selected-row {
+            background-color: #cceeff !important; /* Highlight selected row */
+        }
+        #scheduleContainer {
+            border-top: 2px solid #333;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+		
+	.modal {
+	  display: none;
+	  position: fixed;
+	  z-index: 1000;
+	  left: 0; top: 0;
+	  width: 100%; height: 100%;
+	  background-color: rgba(0,0,0,0.5);
+	  animation: fadeIn 0.3s ease;
+	}
+
+	@keyframes fadeIn {
+	  from { opacity: 0; }
+	  to { opacity: 1; }
+	}
+
+	.modal-content {
+	  background-color: #fff;
+	  padding: 10px;
+	  width: 350px;
+	  border-radius: 8px;
+	  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+	  position: absolute;
+	}
+
+    .close {
+      float: right;
+      font-size: 24px;
+      cursor: pointer;
+    }	
+	
+	#bocce-standings-container {
+	  all: unset;
+	  font-family: Arial, sans-serif; /* reapply only what you want */
+	}
+	#bocce-standings-container table {
+      border-collapse: collapse;
+      text-align: center;
+      margin: 0 auto;
+	}  
+    #bocce-standings-container td {
+      width: 40px;
+      height: 30px;
+      border: 1px solid #ccc;
+      padding-left: 5px;
+      padding-right: 5px;
+	  text-align: center;
+    }
+    #bocce-standings-container .gray-inner {
+      width: 100%;
+      height: 100%;
+      background-color: #71716F;
+    }
+    #bocce-standings-container .bold {
+      font-weight: bold;
+    }
+	#bocce-standings-container table {
+	  width: auto;
+	  border-collapse: collapse;
+	  margin: 0 auto;
+	}
+	#bocce-standings-container td {
+	  padding: 0 5px;
+	}
+	.table-wrapper {
+  max-height: 300px; /* or whatever height you want */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+}
+
+.table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrapper thead th {
+  position: sticky;
+  top: 0;
+  background-color: #f2f2f2; /* match your theme */
+  z-index: 1;
+}
+  </style>	
+</head>
+<body>
+
+    <h1 style="display: flex; align-items: center; gap: 10px;">
+		<img src="AV-Bocce.png" alt="Avalon Bocce Icon" style="height: 80px;">
+		Avalon Estates Bocce Schedule
+	</h1>
+
+	<div id="bocce-standings-container"></div>
+
+    <div class="controls">
+        <div id="inputContainer" style="display: none;">
+			<label for="csvFile">**Select CSV File (Team A, Team B, Date, Time, Court):**</label>
+			<input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload()">
+        </div>	
+        
+        <div id="scheduleContainer" style="display: none;">
+            <label for="teamFilter">Filter by Team:</label>
+            <select id="teamFilter" onchange="filterSchedule()">
+                <option value="">Show All</option>
+            </select>
+			&nbsp;&nbsp;<button id='downloadBtn' disabled>Download by Team (.ics)</button>&nbsp;&nbsp;
+            <button onclick="generateIcs('all')">Download All Games (.ics)</button>
+        </div>
+    </div>
+    
+    <div id="selectionInfo" style="margin-top: 20px; display: none;">
+        <p><strong>Click a row</strong> to select a game, then click the 'Download Selected Game (.ics)' button below.</p>
+        <button id="downloadSelected" onclick="generateIcs('selected')" disabled>Download Selected Game (.ics)</button>
+    </div>
+	
+	    <!--<div class="table-wrapper" id="tableDisplay">-->
+		<div id="tableDisplay">
+        </div>
+		
+  <!-- Modal Container -->
+  <div id="teamModal" class="modal" style="display:none;">
+    <div class="modal-content" id="modalContent">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <table id="teamTable" rules="cols">
+        <tbody>
+          <!-- Rows will be injected here -->
+        </tbody>
+      </table>
+    </div>
+  </div>		
+
+<script>
+    // Global variables to hold the parsed data
+	game = '';
+    let games = [];
+	filteredGames = [];
+    let selectedGameId = null;
+    let gameCounter = 1; 
+	let teamData = [];
+		
+	const fileInput = document.getElementById('csvFile');
+		fileInput.addEventListener('click', () => {
+		fileInput.value = ''; // Reset before opening picker
+	});	    
+	
+	const fallbackData = {
+      wins: [3,1,1,4,1,2,2,3,2,3,1,2,3,2,1,1],
+      gamesPlayed: 4,
+      asOfDate: "11/13/2025",
+	  title: "2025 Winter Bocce League Team Standings as of"
+    };
+		
+   teams = [
+    {
+      "team": 1,
+      "members": [
+        "Kevin Curley (C)",
+        "Annette Pergolizzi",
+        "Eileen Rosen",
+        "Bernice Ross",
+        "Charlene Thompson"
+      ]
+    },
+    {
+      "team": 2,
+      "members": [
+        "Cindy Curley",
+        "Ken Gerb (C)",
+        "Hank Greenber",
+        "Irv Rudowitz",
+        "Edward Zwrin"
+      ]
+    },
+    {
+      "team": 3,
+      "members": [
+        "Eli Kabrun",
+        "Ron Nogid",
+        "Linda Simms",
+        "Matt Tricarico (C)"
+      ]
+    },
+    {
+      "team": 4,
+      "members": [
+        "Joan Hasluck",
+        "Burt Klein (C)",
+        "Maria Murray",
+        "Fredda Nogid",
+        "Jerry Weisman"
+      ]
+    },
+    {
+      "team": 5,
+      "members": [
+        "Sheldon Aronson",
+        "Peter Gardner (C)",
+        "Eric Pappalardi",
+        "Mark Rosen"
+      ]
+    },
+    {
+      "team": 6,
+      "members": [
+        "Gerri Drago",
+        "Leonard Freeman (C)",
+        "Elise Levine",
+        "Sherrie Schram"
+      ]
+    }
+  ]
+
+    async function loadAndRender() {
+      let data;
+      try {
+        const response = await fetch('2025-bocce-standings.json');
+        if (!response.ok) throw new Error("Fetch failed");
+        data = await response.json();
+      } catch (error) {
+        console.warn("Using fallback data due to fetch error:", error);
+        data = fallbackData;
+      }
+      renderTable(data.wins, data.gamesPlayed, data.asOfDate, data.title);
+    }
+
+    function renderTable(wins, gamesPlayed, asOfDate, title) {
+      const numTeams = wins.length;
+      const table = document.createElement('table');
+
+      // Header row
+      const titleRow = document.createElement('tr');
+      titleRow.appendChild(createCell('Games Played', true));
+      const titleCell = document.createElement('td');
+      titleCell.colSpan = numTeams;
+      titleCell.className = 'bold';
+      titleCell.textContent = `${title} ${asOfDate}`;
+      titleRow.appendChild(titleCell);
+      table.appendChild(titleRow);
+
+      // Bar rows
+      for (let level = gamesPlayed; level >= 1; level--) {
+        const row = document.createElement('tr');
+        row.appendChild(createCell(level.toString()));
+        for (let i = 0; i < numTeams; i++) {
+          const cell = document.createElement('td');
+          if (wins[i] >= level) {
+            const bar = document.createElement('div');
+            bar.className = 'gray-inner';
+            cell.appendChild(bar);
+          }
+          row.appendChild(cell);
+        }
+        table.appendChild(row);
+      }
+
+      // Team row
+      const teamRow = document.createElement('tr');
+      teamRow.appendChild(createCell('Teams', true));
+      for (let i = 1; i <= numTeams; i++) {
+        //teamRow.appendChild(createCell(i.toString()));
+		const cell = document.createElement('td');
+		cell.textContent = i.toString();
+		cell.onclick = () => showTeamAt(event, i.toString(), "0", null);
+		teamRow.appendChild(cell);
+      }
+      table.appendChild(teamRow);
+	  // Footer row
+      const footerRow = document.createElement('tr');
+      footerRow.appendChild(createCell(' '));
+      const footerCell = document.createElement('td');
+      footerCell.colSpan = numTeams;
+      footerCell.className = 'bold';
+      footerCell.textContent = `Click on the team number to see the team roster.`;
+      footerRow.appendChild(footerCell);
+      table.appendChild(footerRow);
+
+      const container = document.getElementById('bocce-standings-container');
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    function createCell(content, isBold = false) {
+      const cell = document.createElement('td');
+      cell.textContent = content;
+      if (isBold) cell.className = 'bold';
+      return cell;
+    }
+
+    async function loadTeams() {
+      try {
+        const response = await fetch('2025-bocce-teams.json');
+        const data = await response.json();
+        teamData = data.teams;
+        //renderTeamList();
+      } catch (err) {
+        console.error('Failed to load team data:', err);
+		teamData = teams;
+        //renderTeamList();
+      }
+    }
+
+    function getTeamObject(teamLabel, teams) {
+		// Extract the number from "Team x"
+		const teamNumber = parseInt(teamLabel.replace('Team ', ''), 10);
+		// Find the matching team object
+		return teams.find(t => t.team === teamNumber);
+	}
+	
+	function renderTeamList() {
+      const container = document.getElementById('teamList');
+      teamData.forEach(team => {
+        const div = document.createElement('div');
+        div.className = 'team-line';
+        div.textContent = `Team ${team.team}`;
+        div.onclick = () => showTeamAt(event,`Team ${team.team}`, "Team 1");
+        container.appendChild(div);
+      });
+    }
+
+    function closeModal() {
+      document.getElementById('teamModal').style.display = 'none';
+    }
+	
+	// Close modal when clicking outside the modal content
+	window.addEventListener('click', function(event) {
+		const modal = document.getElementById('teamModal');
+		const content = document.querySelector('.modal-content');
+		if (event.target === modal) {
+		modal.style.display = 'none';
+		}
+	});
+	
+	function positionModal(event, modalContent) {
+		const padding = 10;
+		const modalWidth = modalContent.offsetWidth || 300;
+		const modalHeight = modalContent.offsetHeight || 200;
+
+		// Use clientX/Y for viewport-relative positioning
+		let x = event.clientX + padding;
+		let y = event.clientY + padding;
+
+		// Clamp to viewport bounds
+		if (x + modalWidth > window.innerWidth) {
+			x = window.innerWidth - modalWidth - padding;
+		}
+		if (y + modalHeight > window.innerHeight) {
+			y = window.innerHeight - modalHeight - padding;
+		}
+
+		modalContent.style.position = 'absolute';
+		modalContent.style.left = `${x}px`;
+		modalContent.style.top = `${y}px`;
+		modalContent.style.zIndex = 1000;
+	}
+	
+	function showTeamAt(event, team1, team2, gameId) {
+	    if (gameId !== null) {
+		  selectGame(gameId);
+		};
+		let maxEntries = 0;
+		const tableBody = document.querySelector('#teamTable tbody');
+		tableBody.innerHTML = ' '; // Clear previous rows
+		if (team2 === "0" ) {
+			let header = document.createElement('tr');
+			// column 1 header
+			const teamA = getTeamObject(team1, teamData)
+			let col1 = document.createElement('th');
+			col1.textContent = `Team ${teamA.team}`;
+			header.appendChild(col1);
+			tableBody.appendChild(header);  
+			
+			const maxEntries = teamA.members.length; 
+			for (t=0; t < maxEntries; t++) {
+				const row = document.createElement('tr');
+				const column1 = document.createElement('td');
+				column1.textContent = teamA.members[t];	
+				row.appendChild(column1);
+				tableBody.appendChild(row);
+			};	
+		  } else {
+			const header = document.createElement('tr');
+			// column 1 header
+			const teamA = getTeamObject(team1, teamData)
+			const col1 = document.createElement('th');
+			col1.textContent = `Team ${teamA.team}`;
+			header.appendChild(col1);
+			// column 2 header
+			const teamB = getTeamObject(team2, teamData)
+			const col2 = document.createElement('th');
+			col2.textContent = `Team ${teamB.team}`;
+			header.appendChild(col2);
+			tableBody.appendChild(header);
+			
+			const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
+			for (t=0; t < maxEntries; t++) {
+				const row = document.createElement('tr');
+
+				const column1 = document.createElement('td');
+				if (t+1 > teamA.members.length ) {
+					column1.textContent = " ";
+				  } else {
+					column1.textContent = teamA.members[t];
+				};
+				row.appendChild(column1);
+			
+				const column2 = document.createElement('td');
+				if (t+1 > teamB.members.length ) {
+					column2.textContent = " ";
+				  } else {
+					column2.textContent = teamB.members[t];
+				};
+				row.appendChild(column2);
+			
+				tableBody.appendChild(row);
+			};
+		};
+
+		document.getElementById('teamModal').style.display = 'block';
+		
+		// Position and show
+		const content = document.getElementById('modalContent');
+		positionModal(event, content);
+		//modal.style.display = 'block';
+	}		
+		
+		// *** 0. try to load the server side csv File
+		// ----------------- Loading CSV -----------------
+		function tryLoadFile(url){
+			(async function trySequential(){
+			console.log(`url(${url})`);
+			try {
+				const res = await fetch(url);
+				if(!res.ok) throw new Error('fetch failed ' + res.status);
+				const text = await res.text();
+				inputContainer.disabled = true;
+				parseCSV(text);
+				return;
+			} catch(e){
+				console.log(`tryLoadFile error: ${e}`);
+				const isHidden = inputContainer.style.display === 'none';
+				inputContainer.style.display = isHidden ? 'block' : 'none';
+				return;
+				}
+			})();
+		}
+
+        // *** 1. CSV File Handling & Time Conversion ***
+
+        function convert12HourTo24Hour(timeStr) {
+            const parts = timeStr.toUpperCase().match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/);
+            if (!parts) return null;
+			
+            let hour = parseInt(parts[1], 10);
+            const minute = parts[2];
+            const ampm = parts[3];
+
+            if (ampm === 'PM' && hour !== 12) {
+                hour += 12;
+            } else if (ampm === 'AM' && hour === 12) {
+                hour = 0; 
+            }
+			
+            return `${String(hour).padStart(2, '0')}:${minute}`;
+        }
+
+        function handleFileUpload() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    parseCSV(content);
+                };
+                reader.readAsText(file);
+                
+                setTimeout(() => {
+                    fileInput.value = null; 
+                }, 100);
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/);
+            if (lines.length < 2) return alert("CSV file must contain a header row and at least one data row.");
+            
+            const dataLines = lines.slice(1);
+            games = [];
+            gameCounter = 1;
+
+            dataLines.forEach(line => {
+                const cols = line.split(',');
+                if (cols.length >= 5) {
+                    const rawTime = cols[3].trim();
+                    const convertedTime = convert12HourTo24Hour(rawTime);
+                    const date = cols[2].trim();
+
+                    if (!convertedTime || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                        console.warn(`Skipping line due to invalid format: ${line}`);
+                        return;
+                    }
+
+                    games.push({
+                        id: gameCounter++,
+                        teamA: cols[0].trim(),
+                        teamB: cols[1].trim(),
+                        date: date,
+                        time24: convertedTime,
+                        time12: rawTime,       
+                        court: cols[4].trim()
+                    });
+                }
+            });
+
+            if (games.length > 0) {
+                document.getElementById('scheduleContainer').style.display = 'flex';
+                document.getElementById('selectionInfo').style.display = 'block';
+                initScheduleDisplay();
+            } else {
+                alert("No valid game data found after parsing the CSV. Please check your columns.");
+                document.getElementById('scheduleContainer').style.display = 'none';
+                document.getElementById('selectionInfo').style.display = 'none';
+                document.getElementById('tableDisplay').innerHTML = '';
+            }
+        }
+
+        // *** 2. Initial Table & Filter Setup (Pivot Logic) ***
+        
+        function getUniqueTeams() {
+            const teams = new Set();
+            games.forEach(game => {
+                teams.add(game.teamA);
+                teams.add(game.teamB);
+            });
+            return Array.from(teams).sort();
+        }
+        
+        function initScheduleDisplay() {
+            populateTeamFilter();
+            renderSchedule(games);
+            selectGame(null); 
+        }
+
+        function populateTeamFilter() {
+            const select = document.getElementById('teamFilter');
+            select.innerHTML = '<option value="">Show All</option>';
+            const uniqueTeams = getUniqueTeams();
+            uniqueTeams.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team;
+                option.textContent = team;
+                select.appendChild(option);
+            });
+        }
+
+        // ----------------------------------------------------------------------
+        // ** PIVOT TABLE RENDERING LOGIC **
+        // ----------------------------------------------------------------------
+        function renderSchedule(data) {
+            const tableDisplay = document.getElementById('tableDisplay');
+            
+            if (data.length === 0) {
+                tableDisplay.innerHTML = '<p>No games to display.</p>';
+                return;
+            }
+
+            // 1. Collect all unique dates and times
+            const uniqueDates = Array.from(new Set(data.map(g => g.date))).sort();
+            const uniqueTime24 = Array.from(new Set(data.map(g => g.time24))).sort();
+            const timeMap = {}; 
+            uniqueTime24.forEach(t24 => {
+                const game = data.find(g => g.time24 === t24);
+                if (game) timeMap[t24] = game.time12;
+            });
+
+
+            // 2. Group games by Date and Time for easy lookup
+            const pivotedData = {};
+            data.forEach(game => {
+                const key = `${game.date}-${game.time24}`;
+                if (!pivotedData[key]) {
+                    pivotedData[key] = []; // Use an array to support multiple games at the same time/date
+                }
+                pivotedData[key].push(game); 
+            });
+
+
+            // 3. Build the HTML Table
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Date</th>
+                            ${uniqueTime24.map(t24 => `<th>${timeMap[t24]}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody">
+            `;
+            
+            uniqueDates.forEach(date => {
+                tableHTML += `<tr><td>${date}</td>`;
+                
+                uniqueTime24.forEach(time24 => {
+                    const key = `${date}-${time24}`;
+                    const gamesForSlot = pivotedData[key] || [];
+                    
+                    if (gamesForSlot.length > 0) {
+                        // Concatenate multiple games into one cell, using a line break
+                        const cellContent = gamesForSlot.map(game => `
+                            <div class="game-row" 
+                                data-game-id="${game.id}" 
+                                onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
+                                style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+								<strong>Time: ${game.time12}</strong><br>
+                                <strong>Court: ${game.court}</strong><br>
+                                ${game.teamA} vs ${game.teamB}
+                                <div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
+                            </div>
+                        `).join('');
+
+                        tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`;
+
+                    } else {
+                        // Empty cell
+                        tableHTML += `<td></td>`;
+                    }
+                });
+                
+                tableHTML += `</tr>`;
+            });
+            
+            tableHTML += '</tbody></table>';
+            tableDisplay.innerHTML = tableHTML;
+            
+            if (selectedGameId !== null) {
+                selectGame(selectedGameId);
+            }
+        }
+
+        // ----------------------------------------------------------------------
+        // END PIVOT TABLE RENDERING LOGIC
+        // ----------------------------------------------------------------------
+
+
+        // *** 3. Filtering Logic ***
+
+        function filterSchedule() {
+            const filterValue = document.getElementById('teamFilter').value;
+            filteredGames = games;
+
+            if (filterValue) {
+                filteredGames = games.filter(game => 
+                    game.teamA === filterValue || game.teamB === filterValue
+                );
+            }
+			
+            renderSchedule(filteredGames);
+            selectGame(null);
+			console.log(`FilterSchedule: filterValue(${filterValue})`); // Debug output
+            if (filterValue === "") {
+                downloadBtn.disabled = true;
+            } else {
+                downloadBtn.disabled = false;
+            }			
+        }
+
+        // *** 4. Row Selection Logic ***
+        
+        function selectGame(gameId) {
+            selectedGameId = gameId;
+            // Target the individual game div elements
+            const gameCells = document.querySelectorAll('#tableDisplay .game-row');
+            const downloadButton = document.getElementById('downloadSelected');
+
+            gameCells.forEach(cell => {
+                cell.classList.remove('selected-row');
+                if (cell.dataset.gameId == gameId) {
+                    cell.classList.add('selected-row');
+                }
+            });
+
+            if (gameId !== null) {
+                downloadButton.disabled = false;
+                downloadButton.textContent = `Download Selected Game (${gameId}) (.ics)`;
+            } else {
+                downloadButton.disabled = true;
+                downloadButton.textContent = 'Download Selected Game (.ics)';
+            }
+        }
+
+        // *** 5. ICS File Generation Logic (Unchanged) ***
+        
+        function escapeICS(str) {
+            return String(str).replace(/([,;])/g, '\\$1').replace(/\n/g, '\\n');
+        }
+
+        function formatICSDate(dateStr, time24Str) {
+            const [year, month, day] = dateStr.split('-');
+            const [hour, minute] = time24Str.split(':');
+            return `${year}${month}${day}T${hour}${minute}00`;
+        }
+
+        function formatICSDateOnly(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            return `${year}${month}${day}`;
+        }
+
+        function generateIcs(type) {
+            let selectedGames = [];
+            let fileName = '';
+
+            if (type === 'all') {
+                const gamesByDate = games.reduce((acc, game) => {
+                    (acc[game.date] = acc[game.date] || []).push(game);
+                    return acc;
+                }, {});
+                
+                selectedGames = Object.entries(gamesByDate).map(([date, games]) => ({ date, games }));
+                fileName = 'all_dates_schedule.ics';
+
+            } else if (type === 'selected' && selectedGameId !== null) {
+                const game = games.find(g => g.id === selectedGameId);
+                if (!game) return alert("Selected game not found.");
+                
+                selectedGames.push(game);
+                fileName = `game_${game.teamA}_vs_${game.teamB}_${game.date}.ics`;
+            } else {
+                return alert("Please upload a CSV or select a game first.");
+            }
+
+            let icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Game Schedule Generator//EN`;
+
+            if (type === 'all') {
+                selectedGames.forEach(dayGroup => {
+                    const date = dayGroup.date;
+                    
+                    const dateOnly = formatICSDateOnly(date);
+                    
+                    const nextDay = new Date(date);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    const endDateOnly = formatICSDateOnly(`${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`);
+                    
+                    const descriptionLines = dayGroup.games
+                        .sort((a, b) => a.time24.localeCompare(b.time24))
+                        .map(game => 
+                            `${game.time12} at ${game.court}: ${game.teamA} vs ${game.teamB}`
+                        ).join('\\n');
+
+                    const summary = escapeICS(`Game Day Schedule: ${date}`);
+                    const description = escapeICS(descriptionLines);
+
+                    icsContent += `
+BEGIN:VEVENT
+UID:${date}-ALLGAMES@gameschedule.com
+DTSTART;VALUE=DATE:${dateOnly}
+DTEND;VALUE=DATE:${endDateOnly}
+SUMMARY:${summary}
+DESCRIPTION:${description}
+LOCATION:Various Courts
+END:VEVENT`;
+                });
+
+            } else { 
+                const game = selectedGames[0]; 
+                
+                const dateTimeStart = formatICSDate(game.date, game.time24);
+                
+                const gameDateTime = new Date(`${game.date}T${game.time24}:00`);
+                const endTime = new Date(gameDateTime.getTime() + (45 * 60000)); 
+
+                let endDateStr = game.date;
+                if (endTime.getDate() !== gameDateTime.getDate()) {
+                    endDateStr = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}`;
+                }
+
+                const endHour = String(endTime.getHours()).padStart(2, '0');
+                const endMinute = String(endTime.getMinutes()).padStart(2, '0');
+                const endTime24 = `${endHour}:${endMinute}`;
+                
+                const dateTimeEnd = formatICSDate(endDateStr, endTime24);
+
+                const summary = escapeICS(`Bocce: ${game.court}: ${game.teamA} vs ${game.teamB}`);
+                const description = escapeICS(`Game Details:\\nTeams: ${game.teamA} vs ${game.teamB}\\nLocation: ${game.court}\\nTime: ${game.time12}`);
+
+                icsContent += `
+BEGIN:VEVENT
+DTSTART:${dateTimeStart}
+DTEND:${dateTimeEnd}
+SUMMARY:${summary}
+END:VEVENT`;
+
+                var icsContentOLD = `
+BEGIN:VEVENT
+UID:${game.id}-${game.date}-${game.time24}@gameschedule.com
+DTSTART:${dateTimeStart}
+DTEND:${dateTimeEnd}
+SUMMARY:${summary}
+DESCRIPTION:${description}
+LOCATION:${escapeICS(game.court)}
+END:VEVENT`;
+            }
+
+            icsContent += `
+END:VCALENDAR`;
+
+            // Trigger the download
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+		
+	function generateFilteredICS(events) {
+		const header = [
+			'BEGIN:VCALENDAR',
+			'VERSION:2.0',
+			'PRODID:-//YourApp//Game Calendar//EN'
+	];
+
+  const footer = ['END:VCALENDAR'];
+
+  const body = events.map(event => {            
+                
+    const dateTimeStart = formatICSDate(event.date, event.time24);
+                
+    const eventDateTime = new Date(`${event.date}T${event.time24}:00`);
+    const endTime = new Date(eventDateTime.getTime() + (45 * 60000)); 
+
+    let endDateStr = event.date;
+    if (endTime.getDate() !== eventDateTime.getDate()) {
+        endDateStr = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}`;
+    }
+
+    const endHour = String(endTime.getHours()).padStart(2, '0');
+    const endMinute = String(endTime.getMinutes()).padStart(2, '0');
+    const endTime24 = `${endHour}:${endMinute}`;
+                
+    const dateTimeEnd = formatICSDate(endDateStr, endTime24);
+
+    const summary = escapeICS(`Bocce: ${event.court}: ${event.teamA} vs ${event.teamB}`);
+    const description = escapeICS(`event Details:\\nTeams: ${event.teamA} vs ${event.teamB}\\nLocation: ${event.court}\\nTime: ${event.time12}`);
+				
+	return [
+		'BEGIN:VEVENT',
+		`UID:${event.id}-${event.date}-${event.time24}@gameschedule.com`,
+		`DTSTART:${dateTimeStart}`,
+		`DTEND:${dateTimeEnd}`,
+		`SUMMARY:${summary}`,
+		`DESCRIPTION:${description}`,
+		`LOCATION:${escapeICS(event.court)}`,
+		'END:VEVENT'
+	].join('\r\n');
+  });
+
+  return [...header, ...body, ...footer].join('\r\n');
+}
+
+	function formatDate(date) {
+		const d = new Date(date);
+		return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+	}
+
+	function escapeText(text) {
+		return String(text).replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n');
+	}	
+
+	function downloadICS(content, filename = 'games.ics') {
+		const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+		const link = document.createElement('a');
+		link.href = URL.createObjectURL(blob);
+		link.download = filename;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(link.href);
+	}	
+
+	document.getElementById('downloadBtn').addEventListener('click', () => {
+		const icsContent = generateFilteredICS(filteredGames);
+		downloadICS(icsContent);
+	});
+
+	console.log("Calling Load Functions...");
+	window.onload = loadTeams;
+	loadAndRender();
+	tryLoadFile('bocce-schedule-2025.csv');
+
+    </script>
+
+</body>
+</html>

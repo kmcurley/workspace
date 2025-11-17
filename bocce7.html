@@ -380,16 +380,16 @@
 		const modalWidth = modalContent.offsetWidth || 300;
 		const modalHeight = modalContent.offsetHeight || 200;
 
-		// Use clientX/Y for viewport-relative positioning
-		let x = event.clientX + padding;
-		let y = event.clientY + padding;
-
+		// Use pageX/Y for document-relative positioning
+		let x = event.pageX + padding;
+		let y = event.pageY + padding;
+	
 		// Clamp to viewport bounds
-		if (x + modalWidth > window.innerWidth) {
-			x = window.innerWidth - modalWidth - padding;
+		if (x + modalWidth > window.innerWidth + window.scrollX) {
+			x = window.innerWidth + window.scrollX - modalWidth - padding;
 		}
-		if (y + modalHeight > window.innerHeight) {
-			y = window.innerHeight - modalHeight - padding;
+		if (y + modalHeight > window.innerHeight + window.scrollY) {
+			y = window.innerHeight + window.scrollY - modalHeight - padding;
 		}
 
 		modalContent.style.position = 'absolute';

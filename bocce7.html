@@ -695,9 +695,9 @@
         function filterSchedule() {
             const filterValue = document.getElementById('teamFilter').value;
             filteredGames = games;
-			const formattedDate = new Date().toISOString().split('T')[0];
+			//const formattedDate = new Date().toISOString().split('T')[0];
             filteredGames = games.filter(game => 
-                    game.date >= formattedDate;
+                    game.date >= "2025-11-21";
                 );
 
             if (filterValue) {
@@ -947,4 +947,5 @@ END:VCALENDAR`;
 </body>
 
 </html>
+
 

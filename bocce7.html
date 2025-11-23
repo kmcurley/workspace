@@ -15,11 +15,11 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 5px;
             text-align: left;
         }
         th {
@@ -49,7 +49,7 @@
 		
 	.modal {
 	  display: none;
-	  position: fixed;
+	  position: absolute;
 	  z-index: 1000;
 	  left: 0; top: 0;
 	  width: 100%; height: 100%;
@@ -64,8 +64,7 @@
 
 	.modal-content {
 	  background-color: #fff;
-	  padding: 10px;
-	  width: 350px;
+	  padding: 1px;
 	  border-radius: 8px;
 	  box-shadow: 0 0 10px rgba(0,0,0,0.3);
 	  position: absolute;
@@ -381,16 +380,16 @@
 		const modalWidth = modalContent.offsetWidth || 300;
 		const modalHeight = modalContent.offsetHeight || 200;
 
-		// Use clientX/Y for viewport-relative positioning
-		let x = event.clientX + padding;
-		let y = event.clientY + padding;
-
+		// Use pageX/Y for document-relative positioning
+		let x = event.pageX + padding;
+		let y = event.pageY + padding;
+	
 		// Clamp to viewport bounds
-		if (x + modalWidth > window.innerWidth) {
-			x = window.innerWidth - modalWidth - padding;
+		if (x + modalWidth > window.innerWidth + window.scrollX) {
+			x = window.innerWidth + window.scrollX - modalWidth - padding;
 		}
-		if (y + modalHeight > window.innerHeight) {
-			y = window.innerHeight - modalHeight - padding;
+		if (y + modalHeight > window.innerHeight + window.scrollY) {
+			y = window.innerHeight + window.scrollY - modalHeight - padding;
 		}
 
 		modalContent.style.position = 'absolute';
@@ -517,7 +516,9 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const content = e.target.result;
+					inputContainer.disabled = true;
                     parseCSV(content);
+					inputContainer.style.display = 'none';
                 };
                 reader.readAsText(file);
                 
@@ -561,12 +562,12 @@
 
             if (games.length > 0) {
                 document.getElementById('scheduleContainer').style.display = 'flex';
-                document.getElementById('selectionInfo').style.display = 'block';
+                //document.getElementById('selectionInfo').style.display = 'block';
                 initScheduleDisplay();
             } else {
                 alert("No valid game data found after parsing the CSV. Please check your columns.");
                 document.getElementById('scheduleContainer').style.display = 'none';
-                document.getElementById('selectionInfo').style.display = 'none';
+                //document.getElementById('selectionInfo').style.display = 'none';
                 document.getElementById('tableDisplay').innerHTML = '';
             }
         }
@@ -584,7 +585,8 @@
         
         function initScheduleDisplay() {
             populateTeamFilter();
-            renderSchedule(games);
+            //renderSchedule(games);
+			filterSchedule();
             selectGame(null); 
         }
 
@@ -658,8 +660,8 @@
                                 data-game-id="${game.id}" 
                                 onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
                                 style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
-								<strong>Time: ${game.time12}</strong><br>
-                                <strong>Court: ${game.court}</strong><br>
+								<strong>${game.time12}</strong><br>
+                                <strong>${game.court}</strong><br>
                                 ${game.teamA} vs ${game.teamB}
                                 <div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
                             </div>
@@ -690,10 +692,13 @@
 
 
         // *** 3. Filtering Logic ***
-
         function filterSchedule() {
             const filterValue = document.getElementById('teamFilter').value;
             filteredGames = games;
+			//const formattedDate = new Date().toISOString().split('T')[0];
+            filteredGames = games.filter(game => 
+                    game.date >= "2025-11-21"
+                );
 
             if (filterValue) {
                 filteredGames = games.filter(game => 
@@ -940,4 +945,8 @@ END:VCALENDAR`;
     </script>
 
 </body>
+
 </html>
+
+
+

@@ -182,78 +182,36 @@
     let selectedGameId = null;
     let gameCounter = 1; 
 	let teamData = [];
+	let currentDate = new Date().toISOString().split('T')[0];
+	console.log(`currentDate=${currentDate}`);
 		
+	// this routine opens a local CSV schedule file 
+	// when testing this code in a local browser
 	const fileInput = document.getElementById('csvFile');
 		fileInput.addEventListener('click', () => {
 		fileInput.value = ''; // Reset before opening picker
 	});	    
 	
+	// Create data to use with to display a table with bocce league results
 	const fallbackData = {
       wins: [3,1,1,4,1,2,2,3,2,3,1,2,3,2,1,1],
       gamesPlayed: 4,
       asOfDate: "11/13/2025",
 	  title: "2025 Winter Bocce League Team Standings as of"
     };
-		
-   teams = [
-    {
-      "team": 1,
-      "members": [
-        "Kevin Curley (C)",
-        "Annette Pergolizzi",
-        "Eileen Rosen",
-        "Bernice Ross",
-        "Charlene Thompson"
-      ]
-    },
-    {
-      "team": 2,
-      "members": [
-        "Cindy Curley",
-        "Ken Gerb (C)",
-        "Hank Greenber",
-        "Irv Rudowitz",
-        "Edward Zwrin"
-      ]
-    },
-    {
-      "team": 3,
-      "members": [
-        "Eli Kabrun",
-        "Ron Nogid",
-        "Linda Simms",
-        "Matt Tricarico (C)"
-      ]
-    },
-    {
-      "team": 4,
-      "members": [
-        "Joan Hasluck",
-        "Burt Klein (C)",
-        "Maria Murray",
-        "Fredda Nogid",
-        "Jerry Weisman"
-      ]
-    },
-    {
-      "team": 5,
-      "members": [
-        "Sheldon Aronson",
-        "Peter Gardner (C)",
-        "Eric Pappalardi",
-        "Mark Rosen"
-      ]
-    },
-    {
-      "team": 6,
-      "members": [
-        "Gerri Drago",
-        "Leonard Freeman (C)",
-        "Elise Levine",
-        "Sherrie Schram"
-      ]
-    }
-  ]
+	
+	// Dynamically create an array of 16 teams with 2 members each
+	// for testing purposes when there is no team JSON file
+	const teams = [];
+	for (let i = 1; i <= 16; i++) {
+		teams.push({
+		team: i,
+		members: [
+		`Member 1 (C)`,  // Captain
+		`Member 2`       // Second member
+		]
+	  });
+	}
 
     async function loadAndRender() {
       let data;
@@ -692,12 +650,13 @@
 
 
         // *** 3. Filtering Logic ***
+
         function filterSchedule() {
             const filterValue = document.getElementById('teamFilter').value;
             filteredGames = games;
-			//const formattedDate = new Date().toISOString().split('T')[0];
+			
             filteredGames = games.filter(game => 
-                    game.date >= "2025-11-21"
+                    game.date >= currentDate
                 );
 
             if (filterValue) {
@@ -945,8 +904,4 @@ END:VCALENDAR`;
     </script>
 
 </body>
-
 </html>
-
-
-

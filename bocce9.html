@@ -186,10 +186,24 @@
 	let asOfDate = "";
 	let gamesPlayed = 0;	
 	let gamesWon = 0;
+	let fallbackData = [];
+	let teams = [];
+	let tnames = ['NA',
+				'Avalon Estates',
+				'Cascades Ballers',
+				'Huntington Lakes',
+				'Polo Trace',
+				'Ponte Vecchio',
+				'Valencia Cove',
+				'Valencia Falls',
+				'Valencia Pointe'];
+	
 	console.log(`currentDate=${currentDate}`);
 	
-    const urlLeague = getLeagueFromURL();
-    const baseLeague = urlLeague || "avalon";
+    let urlLeague = getLeagueFromURL();
+	console.log(`urlLeague(${urlLeague})`);
+    let baseLeague = urlLeague || "avalon";
+	console.log(`baseLeague(${baseLeague})`);
 		
 	// this routine opens a local CSV schedule file 
 	// when testing this code in a local browser
@@ -198,41 +212,69 @@
 		fileInput.value = ''; // Reset before opening picker
 	});	    
 	
-	// Create data to use with to display a table with bocce league results	
-	const fallbackData = {
-       "wins": [5,3,2,7,2,3,2,5,5,4,2,4,6,2,3,1],
-		"gamesPlayed": 7,
-		"asOfDate": "12/11/2025",
-		"title": "2025 Winter Bocce League Team Standings as of",
-		"weeks": [
+	if (baseLeague === "pbc") {
+	    console.log(`setup fallback params for pbc`);
+		// Create data to use with to display a table with bocce league results	
+		fallbackData = {
+		   "wins": [2,0,2,2,1,0,4,1],
+			"gamesPlayed": 4,
+			"asOfDate": "01/12/2026",
+			"title": "PBC Bocce League Team Standings as of",
+			"weeks": [
+				["20251205",1,4,7],
+				["20251219",1,4,7],
+				["20250105",3,5,7],
+				["20260112",3,8,7]
+		    ]
+		}
+		
+		// Dynamically create an array of 16 teams with 2 members each
+		// for testing purposes when there is no team JSON file
+		teams = [];
+		for (let i = 1; i <= 8; i++) {
+			teams.push({
+			team: i,
+			name: tnames[i],
+			members: [
+			 tnames[i]  // Team name
+			]
+		  });
+		}
+		
+	  } else {
+	    console.log(`setup fallback params for avalon`);
+		// Create data to use with to display a table with bocce league results			
+		fallbackData = {
+		   "wins": [2,0,2,2,1,0,0,4,5,4,2,4,6,2,3,1],
+			"gamesPlayed": 7,
+			"asOfDate": "12/11/2025",
+			"title": "2025 Winter Bocce League Team Standings as of",
+			"weeks": [
 			["20251023",1,4,8,9,10,12,13,14],
-			["20251030",1,4,6,7,8,9,10,16],
-			["20251106",4,5,6,7,8,12,13,14],
-			["20251113",1,2,3,4,10,11,13,15],
-			["20251120",2,4,5,6,9,11,13,15],
-			["20251204",1,2,3,4,8,9,12,13],
-			["20251211",1,4,8,9,10,12,13,15]
-		   ]
-	}
-	
-	// Dynamically create an array of 16 teams with 2 members each
-	// for testing purposes when there is no team JSON file
-	const teams = [];
-	for (let i = 1; i <= 16; i++) {
-		teams.push({
-		team: i,
-		members: [
-		`Member 1 (C)`,  // Captain
-		`Member 2`       // Second member
-		]
-	  });
-	}
+			["20251030",1,4,6,7,8,9,10,16]
+		    ]
+		}
+		
+		// Dynamically create an array of 16 teams with 2 members each
+		// for testing purposes when there is no team JSON file
+		teams = [];
+		for (let i = 1; i <= 16; i++) {
+			teams.push({
+			team: i,
+			members: [
+			`Member 1 (C)`,  // Captain
+			`Member 2`       // Second member
+			]
+		  });
+		}
+	};
 	
 	// ------------------------------
 	// URL PARAMS
 	// ------------------------------
 	function getLeagueFromURL() {
 		const params = new URLSearchParams(window.location.search);
+		console.log(`params(${params})`);
 		const league = params.get("league");
 		if (!league) return null;
 		const L = league.toLowerCase();
@@ -243,7 +285,9 @@
     async function loadAndRender() {
       let data;
       try {
-        const response = await fetch(baseLeague + '-2025-bocce-standings.json');
+	    const loadFile = baseLeague + '-2025-bocce-standings.json'; 
+		console.log(`loadAndRender: loading ${loadFile}`);
+        const response = await fetch(loadFile);
         if (!response.ok) throw new Error("Fetch failed");
         data = await response.json();
       } catch (error) {
@@ -252,6 +296,7 @@
       }
 	  if ( "1" === "2" ) {
 	    console.log('calling renderTable...');
+		console.log(`data.wins (${data.wins})`);
 		renderTable(data.wins, data.gamesPlayed, data.asOfDate, data.title);
 	   } else {
 	    console.log('calling calculateTeamWins...');
@@ -263,13 +308,19 @@
 
     // Function to total wins and set globals
     function calculateTeamWins(weeks) {
-      const wins = Array(16).fill(0);
+	  console.log(`calculateTeamWins: starting function`);
+	  if (baseLeague === "pbc") {
+	  	  arraySize = 8;
+		} else {
+		  arraySize = 16;
+	  } 
+	  const wins = Array(arraySize).fill(0);
 
       // Loop through each week
       weeks.forEach(week => {
         for (let i = 1; i < week.length; i++) {
           const teamNumber = week[i];
-          if (teamNumber >= 1 && teamNumber <= 16) {
+          if (teamNumber >= 1 && teamNumber <= arraySize) {
             wins[teamNumber - 1]++;
           }
         }
@@ -291,7 +342,7 @@
       gamesWon = wins.reduce((sum, val) => sum + val, 0);
 
       // Display info message
-      console.info("Games Played:", gamesPlayed, 
+      console.log("Games Played:", gamesPlayed, 
                    "Games Won:", gamesWon, 
                    "As Of:", asOfDate, 
                    "Wins:", wins);
@@ -310,7 +361,8 @@
       const titleCell = document.createElement('td');
       titleCell.colSpan = numTeams;
       titleCell.className = 'bold';
-      titleCell.textContent = `${title} ${asOfDate}.  Games played so far: ${gamesWon}`;
+      // titleCell.textContent = `${title} ${asOfDate}.  Games played so far: ${gamesWon}`;
+	  titleCell.textContent = `${title} ${asOfDate}.`;
       titleRow.appendChild(titleCell);
       table.appendChild(titleRow);
 
@@ -336,11 +388,17 @@
       for (let i = 1; i <= numTeams; i++) {
         //teamRow.appendChild(createCell(i.toString()));
 		const cell = document.createElement('td');
-		cell.textContent = i.toString();
+		if (baseLeague === "pbc") {
+			cell.textContent = tnames[i];
+		  } else {
+		    cell.textContent = i.toString();
+		}
 		cell.onclick = () => showTeamAt(event, i.toString(), "0", null);
 		teamRow.appendChild(cell);
       }
       table.appendChild(teamRow);
+	  
+	  if (baseLeague != "pbc") {
 	  // Footer row
       const footerRow = document.createElement('tr');
       footerRow.appendChild(createCell(' '));
@@ -350,6 +408,7 @@
       footerCell.textContent = `Click on the team number to see the team roster.`;
       footerRow.appendChild(footerCell);
       table.appendChild(footerRow);
+	  }
 
       const container = document.getElementById('bocce-standings-container');
       container.innerHTML = '';
@@ -667,7 +726,20 @@
 
 
             // 3. Build the HTML Table
-            let tableHTML = `
+			let tableHTML = "";
+			if (baseLeague = "pbc") {
+             tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Date</th>
+                            ${uniqueTime24.map(t24 => `<th>9:00 AM</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody">
+            `;
+			} else {
+			 tableHTML = `
                 <table>
                     <thead>
                         <tr>
@@ -677,6 +749,7 @@
                     </thead>
                     <tbody id="scheduleBody">
             `;
+			}
             
             uniqueDates.forEach(date => {
                 tableHTML += `<tr><td>${date}</td>`;
@@ -686,8 +759,19 @@
                     const gamesForSlot = pivotedData[key] || [];
                     
                     if (gamesForSlot.length > 0) {
+					  let cellContent = "";
+					  if (baseLeague = "pbc") {
                         // Concatenate multiple games into one cell, using a line break
-                        const cellContent = gamesForSlot.map(game => `
+                         cellContent = gamesForSlot.map(game => `
+                            <div class="game-row" 
+                                data-game-id="${game.id}" 
+                                onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
+                                style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+                                ${game.teamA}<br>vs<br>${game.teamB}
+                            </div>
+                        `).join('');
+					   } else {
+						 cellContent = gamesForSlot.map(game => `
                             <div class="game-row" 
                                 data-game-id="${game.id}" 
                                 onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
@@ -697,9 +781,10 @@
                                 ${game.teamA} vs ${game.teamB}
                                 <div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
                             </div>
-                        `).join('');
+                        `).join('')
+					   } 
 
-                        tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`;
+                        tableHTML += `<td style="vertical-align: top; text-align: center;">${cellContent}</td>`;
 
                     } else {
                         // Empty cell
@@ -977,72 +1062,5 @@ END:VCALENDAR`;
 
     </script>
 
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Team Wins Totals</title>
-</head>
-<body>
-  <h1>Team Wins Totals</h1>
-  <p>Open your browser console (F12 → Console tab) to see the info message output.</p>
-
-  <script>
-    // Global variables
-    let asOfDate = "";
-    let gamesPlayed = 0;
-    let gamesWon = 0;
-
-    // Function to total wins and set globals
-    function calculateTeamWins(weeks) {
-      const wins = Array(16).fill(0);
-
-      // Loop through each week
-      weeks.forEach(week => {
-        for (let i = 1; i < week.length; i++) {
-          const teamNumber = week[i];
-          if (teamNumber >= 1 && teamNumber <= 16) {
-            wins[teamNumber - 1]++;
-          }
-        }
-      });
-
-      // Set global gamesPlayed
-      gamesPlayed = weeks.length;
-
-      // Get last week's date (yyyymmdd format at position 0)
-      const lastWeekDate = weeks[weeks.length - 1][0]; // e.g. "20251215"
-      const yyyy = lastWeekDate.substring(0, 4);
-      const mm   = lastWeekDate.substring(4, 6);
-      const dd   = lastWeekDate.substring(6, 8);
-
-      // Set global asOfDate in mm/dd/yyyy format
-      asOfDate = mm + "/" + dd + "/" + yyyy;
-
-      // Calculate total games won (sum of wins array)
-      gamesWon = wins.reduce((sum, val) => sum + val, 0);
-
-      // Display info message
-      console.info("Games Played:", gamesPlayed, 
-                   "Games Won:", gamesWon, 
-                   "As Of:", asOfDate, 
-                   "Wins:", wins);
-
-      return wins;
-    }
-
-    // Example weeks data (yyyymmdd at position 0)
-    const weeks = [
-      ["20251201", 1, 5, 8, 12, 3, 7, 10, 16],
-      ["20251208", 2, 4, 6, 9, 11, 13, 14, 15],
-      ["20251215", 1, 2, 3, 4, 5, 6, 7, 8]
-    ];
-
-    // Run calculation
-    const totals = calculateTeamWins(weeks);
-  </script>
 </body>
 </html>

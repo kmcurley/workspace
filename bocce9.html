@@ -1058,9 +1058,14 @@ END:VCALENDAR`;
 	console.log("Calling Load Functions...");
 	window.onload = loadTeams;
 	loadAndRender();
-	tryLoadFile('bocce-schedule-2025.csv');
+	if (baseLeague === "pbc") {
+		tryLoadFile('pbc-bocce-schedule-2025.csv');
+	  } else {
+		tryLoadFile('bocce-schedule-2025.csv')
+	};
 
     </script>
 
 </body>
 </html>
+

@@ -242,7 +242,7 @@ async function init() {
     const baseLeague = urlLeague || "avalon";  
 
     // Contacts + standings always follow URL league (or Avalon default)
-    //loadContacts(baseLeague);
+    loadContacts(baseLeague);
     loadStandings(baseLeague);
 
     // Schedule selector only appears when no URL param
@@ -267,4 +267,5 @@ init();
 </script>
 
 </body>
+
 </html>

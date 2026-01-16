@@ -398,16 +398,16 @@
       }
       table.appendChild(teamRow);
 	  
-	  if (baseLeague != "pbc") {
-	  // Footer row
-      const footerRow = document.createElement('tr');
-      footerRow.appendChild(createCell(' '));
-      const footerCell = document.createElement('td');
-      footerCell.colSpan = numTeams;
-      footerCell.className = 'bold';
-      footerCell.textContent = `Click on the team number to see the team roster.`;
-      footerRow.appendChild(footerCell);
-      table.appendChild(footerRow);
+	  if (baseLeague !== "pbc") {
+		  // Footer row
+	      const footerRow = document.createElement('tr');
+	      footerRow.appendChild(createCell(' '));
+	      const footerCell = document.createElement('td');
+	      footerCell.colSpan = numTeams;
+	      footerCell.className = 'bold';
+	      footerCell.textContent = `Click on the team number to see the team roster.`;
+	      footerRow.appendChild(footerCell);
+	      table.appendChild(footerRow);
 	  }
 
       const container = document.getElementById('bocce-standings-container');
@@ -727,7 +727,7 @@
 
             // 3. Build the HTML Table
 			let tableHTML = "";
-			if (baseLeague = "pbc") {
+			if (baseLeague === "pbc") {
              tableHTML = `
                 <table>
                     <thead>
@@ -760,7 +760,7 @@
                     
                     if (gamesForSlot.length > 0) {
 					  let cellContent = "";
-					  if (baseLeague = "pbc") {
+					  if (baseLeague === "pbc") {
                         // Concatenate multiple games into one cell, using a line break
                          cellContent = gamesForSlot.map(game => `
                             <div class="game-row" 
@@ -1068,5 +1068,6 @@ END:VCALENDAR`;
 
 </body>
 </html>
+
 
 

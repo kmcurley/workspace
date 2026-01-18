@@ -1,53 +1,14 @@
-Home Team,Away Team,Date,Time
-Avalon Estates (H),Huntington Lakes (A),2025-12-01,09:00:00 AM
-Cascades Ballers (H),Valencia Cove (A),2025-12-01,09:01:01 AM
-Ponte Vecchio (H),Valencia Pointe (A),2025-12-01,09:02:02 AM
-Polo Trace (H),Valencia Falls (A),2025-12-01,09:03:03 AM
-Avalon Estates (H),Ponte Vecchio (A),2025-12-08,09:00:00 AM
-Cascades Ballers (H),Polo Trace (A),2025-12-08,09:01:01 AM
-Huntington Lakes (H),Valencia Falls (A),2025-12-08,09:02:02 AM
-Valencia Cove (H),Valencia Pointe (A),2025-12-08,09:03:03 AM
-Avalon Estates (H),Valencia Cove (A),2025-12-15,09:00:00 AM
-Cascades Ballers (H),Valencia Falls (A),2025-12-15,09:01:01 AM
-Huntington Lakes (H),Valencia Pointe (A),2025-12-15,09:02:02 AM
-Polo Trace (H),Ponte Vecchio (A),2025-12-15,09:03:03 AM
-Avalon Estates (H),Cascades Ballers (A),2026-01-05,09:00:00 AM
-Huntington Lakes (H),Polo Trace (A),2026-01-05,09:01:01 AM
-Ponte Vecchio (H),Valencia Cove (A),2026-01-05,09:02:02 AM
-Valencia Falls (H),Valencia Pointe (A),2026-01-05,09:03:03 AM
-Avalon Estates (H),Polo Trace (A),2026-01-12,09:00:00 AM
-Cascades Ballers (H),Huntington Lakes (A),2026-01-12,09:01:01 AM
-Valencia Cove (H),Valencia Falls (A),2026-01-12,09:02:02 AM
-Ponte Vecchio (H),Valencia Pointe (A),2026-01-12,09:03:03 AM
-Avalon Estates (H),Valencia Falls (A),2026-01-19,09:00:00 AM
-Cascades Ballers (H),Valencia Pointe (A),2026-01-19,09:01:01 AM
-Huntington Lakes (H),Ponte Vecchio (A),2026-01-19,09:02:02 AM
-Polo Trace (H),Valencia Cove (A),2026-01-19,09:03:03 AM
-Avalon Estates (H),Valencia Pointe (A),2026-01-26,09:00:00 AM
-Cascades Ballers (H),Ponte Vecchio (A),2026-01-26,09:01:01 AM
-Huntington Lakes (H),Valencia Cove (A),2026-01-26,09:02:02 AM
-Polo Trace (H),Valencia Falls (A),2026-01-26,09:03:03 AM
-Avalon Estates (H),Huntington Lakes (A),2026-02-02,09:00:00 AM
-Cascades Ballers (H),Valencia Cove (A),2026-02-02,09:01:01 AM
-Ponte Vecchio (H),Valencia Pointe (A),2026-02-02,09:02:02 AM
-Polo Trace (H),Valencia Falls (A),2026-02-02,09:03:03 AM
-Avalon Estates (H),Ponte Vecchio (A),2026-02-09,09:00:00 AM
-Cascades Ballers (H),Polo Trace (A),2026-02-09,09:01:01 AM
-Huntington Lakes (H),Valencia Falls (A),2026-02-09,09:02:02 AM
-Valencia Cove (H),Valencia Pointe (A),2026-02-09,09:03:03 AM
-Avalon Estates (H),Valencia Cove (A),2026-02-16,09:00:00 AM
-Cascades Ballers (H),Valencia Falls (A),2026-02-16,09:01:01 AM
-Huntington Lakes (H),Valencia Pointe (A),2026-02-16,09:02:02 AM
-Polo Trace (H),Ponte Vecchio (A),2026-02-16,09:03:03 AM
-Avalon Estates (H),Cascades Ballers (A),2026-03-02,09:00:00 AM
-Huntington Lakes (H),Polo Trace (A),2026-03-02,09:01:01 AM
-Ponte Vecchio (H),Valencia Cove (A),2026-03-02,09:02:02 AM
-Valencia Falls (H),Valencia Pointe (A),2026-03-02,09:03:03 AM
-Avalon Estates (H),Polo Trace (A),2026-03-09,09:00:00 AM
-Cascades Ballers (H),Huntington Lakes (A),2026-03-09,09:01:01 AM
-Valencia Cove (H),Valencia Falls (A),2026-03-09,09:02:02 AM
-Ponte Vecchio (H),Valencia Pointe (A),2026-03-09,09:03:03 AM
-Avalon Estates (H),Valencia Falls (A),2026-03-16,09:00:00 AM
-Cascades Ballers (H),Valencia Pointe (A),2026-03-16,09:01:01 AM
-Huntington Lakes (H),Ponte Vecchio (A),2026-03-16,09:02:02 AM
-Polo Trace (H),Valencia Cove (A),2026-03-16,09:03:03 AM
+Date,Match 1,Match 2,Match 3,Match 4
+December 1,1 (H) vs 3 (A),2 (H) vs 6 (A),5 (H) vs 8 (A),4 (H) vs 7 (A)
+December 8,1 (H) vs 5 (A),2 (H) vs 4 (A),3 (H) vs 7 (A),6 (H) vs 8 (A)
+December 15,1 (H) vs 6 (A),2 (H) vs 7 (A),3 (H) vs 8 (A),4 (H) vs 5 (A)
+January 5,1 (H) vs 2 (A),3 (H) vs 4 (A),5 (H) vs 6 (A),7 (H) vs 8 (A)
+January 12,1 (H) vs 4 (A),2 (H) vs 3 (A),6 (H) vs 7 (A),5 (H) vs 8 (A)
+January 19,1 (H) vs 7 (A),2 (H) vs 8 (A),3 (H) vs 5 (A),4 (H) vs 6 (A)
+January 26,1 (H) vs 8 (A),2 (H) vs 5 (A),3 (H) vs 6 (A),4 (H) vs 7 (A)
+February 2,1 (H) vs 3 (A),2 (H) vs 6 (A),5 (H) vs 8 (A),4 (H) vs 7 (A)
+February 9,1 (H) vs 5 (A),2 (H) vs 4 (A),3 (H) vs 7 (A),6 (H) vs 8 (A)
+February 16,1 (H) vs 6 (A),2 (H) vs 7 (A),3 (H) vs 8 (A),4 (H) vs 5 (A)
+March 2,1 (H) vs 2 (A),3 (H) vs 4 (A),5 (H) vs 6 (A),7 (H) vs 8 (A)
+March 9,1 (H) vs 4 (A),2 (H) vs 3 (A),6 (H) vs 7 (A),5 (H) vs 8 (A)
+March 16,1 (H) vs 7 (A),2 (H) vs 8 (A),3 (H) vs 5 (A),4 (H) vs 6 (A)

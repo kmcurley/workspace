@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Amenity Reservation Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0 16px 32px;
+      background: #f5f5f5;
+    }
+    h1 {
+      margin-top: 16px;
+    }
+    .tabs {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+    }
+    .tab-button {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      background: #eee;
+      cursor: pointer;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab-button.active {
+      background: #fff;
+      border-bottom: 1px solid #fff;
+      font-weight: bold;
+    }
+    .tab-content {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 0 4px 4px 4px;
+      padding: 16px;
+      margin-top: -1px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    .reserved {
+      background-color: yellow;
+      font-weight: bold;
+    }
+    .filters {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .filters label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    .filters select,
+    .filters input {
+      padding: 4px;
+      font-size: 13px;
+    }
+    .calendar-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .calendar-controls button {
+      padding: 4px 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .checkboxes {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .day-header {
+      margin-top: 16px;
+      font-weight: bold;
+    }
+    .no-reservations {
+      font-style: italic;
+      color: #666;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Amenity Reservation Dashboard</h1>
+
+  <div class="tabs">
+    <button class="tab-button active" data-tab="reservations">Reservations</button>
+    <button class="tab-button" data-tab="calendar">Calendar</button>
+    <button class="tab-button" data-tab="cancellations">Cancellations</button>
+  </div>
+
+  <div id="reservations" class="tab-content">
+    <h2>Active Reservations</h2>
+    <div id="reservations-filters" class="filters">
+      <div>
+        <label for="categoryFilter">Filter by Category</label>
+        <select id="categoryFilter" multiple size="4"></select>
+      </div>
+      <div>
+        <label for="amenityFilter">Filter by Amenity</label>
+        <select id="amenityFilter" multiple size="6"></select>
+      </div>
+      <div>
+        <label for="nameFilter">Filter by Name (contains)</label>
+        <input type="text" id="nameFilter" placeholder="Type name..." />
+      </div>
+    </div>
+    <div id="reservations-table-container"></div>
+  </div>
+
+  <div id="calendar" class="tab-content" style="display:none;">
+    <h2>Weekly Pickleball Court Schedule</h2>
+    <div class="calendar-controls">
+      <button id="prevWeekBtn">← Previous Week</button>
+      <div>
+        <label for="weekInput">Select week (Monday start)</label><br />
+        <input type="date" id="weekInput" />
+      </div>
+      <button id="nextWeekBtn">Next Week →</button>
+    </div>
+    <div class="checkboxes">
+      <label><input type="checkbox" id="showOnlyReserved" /> Show only reserved time slots</label>
+      <label><input type="checkbox" id="collapseEmptyDays" /> Collapse days with no reservations</label>
+    </div>
+    <div id="calendar-container"></div>
+  </div>
+
+  <div id="cancellations" class="tab-content" style="display:none;">
+    <h2>Cancellations</h2>
+    <div id="cancellations-table-container"></div>
+  </div>
+
+  <script>
+    // -----------------------------
+    // Utility functions
+    // -----------------------------
+    function toDateInputValue(date) {
+      const d = new Date(date);
+      const off = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - off * 60 * 1000);
+      return local.toISOString().split("T")[0];
+    }
+
+    function getMonday(date) {
+      const d = new Date(date);
+      const day = d.getDay(); // 0=Sun,1=Mon,...
+      const diff = (day === 0 ? -6 : 1 - day); // shift to Monday
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    function formatDayHeader(date) {
+      return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "2-digit"
+      });
+    }
+
+    function parseDateTime(str) {
+      // "YYYY-MM-DD HH:MM"
+      const [datePart, timePart] = str.split(" ");
+      const [y, m, d] = datePart.split("-").map(Number);
+      const [hh, mm] = timePart.split(":").map(Number);
+      return new Date(y, m - 1, d, hh, mm, 0, 0);
+    }
+
+    function formatTime(date) {
+      const hh = String(date.getHours()).padStart(2, "0");
+      const mm = String(date.getMinutes()).padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
+
+    // -----------------------------
+    // Global state
+    // -----------------------------
+    let reservationsData = {};
+    let cancellationsData = {};
+    let selectedWeek = getMonday(new Date());
+
+    // -----------------------------
+    // Tab switching
+    // -----------------------------
+    document.querySelectorAll(".tab-button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.getAttribute("data-tab");
+        document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+        document.getElementById(tab).style.display = "block";
+      });
+    });
+
+    // -----------------------------
+    // Load JSON data
+    // -----------------------------
+    async function loadData() {
+      try {
+        const resRes = await fetch("reservations.json");
+        reservationsData = await resRes.json();
+      } catch (e) {
+        reservationsData = {};
+      }
+      try {
+        const resCan = await fetch("cancellations.json");
+        cancellationsData = await resCan.json();
+      } catch (e) {
+        cancellationsData = {};
+      }
+      initReservationsTab();
+      initCalendarTab();
+      renderCancellations();
+    }
+
+    // -----------------------------
+    // Reservations Tab
+    // -----------------------------
+    function initReservationsTab() {
+      const categorySelect = document.getElementById("categoryFilter");
+      const amenitySelect = document.getElementById("amenityFilter");
+      const nameInput = document.getElementById("nameFilter");
+
+      const entries = Object.values(reservationsData);
+      const categories = Array.from(new Set(entries.map(r => r.Category || "").filter(Boolean))).sort();
+      categorySelect.innerHTML = "";
+      categories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        opt.selected = true;
+        categorySelect.appendChild(opt);
+      });
+
+      function getSelectedOptions(select) {
+        return Array.from(select.options).filter(o => o.selected).map(o => o.value);
+      }
+
+      function updateAmenityOptions() {
+        const selectedCategories = getSelectedOptions(categorySelect);
+        let filtered = entries;
+        if (selectedCategories.length > 0) {
+          filtered = filtered.filter(r => selectedCategories.includes(r.Category || ""));
+        }
+        const amenities = Array.from(new Set(filtered.map(r => r.Amenity).filter(a => typeof a === "string"))).sort();
+        amenitySelect.innerHTML = "";
+        amenities.forEach(a => {
+          const opt = document.createElement("option");
+          opt.value = a;
+          opt.textContent = a;
+          opt.selected = true;
+          amenitySelect.appendChild(opt);
+        });
+      }
+
+      function renderReservationsTable() {
+        const selectedCategories = getSelectedOptions(categorySelect);
+        const selectedAmenities = getSelectedOptions(amenitySelect);
+        const nameFilter = nameInput.value.trim().toLowerCase();
+
+        let filtered = entries.slice();
+
+        if (selectedCategories.length > 0) {
+          filtered = filtered.filter(r => selectedCategories.includes(r.Category || ""));
+        }
+        if (selectedAmenities.length > 0) {
+          filtered = filtered.filter(r => selectedAmenities.includes(r.Amenity));
+        }
+        if (nameFilter) {
+          filtered = filtered.filter(r => (r.Name || "").toLowerCase().includes(nameFilter));
+        }
+
+        const container = document.getElementById("reservations-table-container");
+        if (filtered.length === 0) {
+          container.innerHTML = "<p>No reservations found.</p>";
+          return;
+        }
+
+        const cols = Array.from(new Set(filtered.flatMap(r => Object.keys(r))));
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const trHead = document.createElement("tr");
+        cols.forEach(c => {
+          const th = document.createElement("th");
+          th.textContent = c;
+          trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        filtered.forEach(r => {
+          const tr = document.createElement("tr");
+          cols.forEach(c => {
+            const td = document.createElement("td");
+            td.textContent = r[c] !== undefined ? r[c] : "";
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+
+        container.innerHTML = "";
+        container.appendChild(table);
+      }
+
+      categorySelect.addEventListener("change", () => {
+        updateAmenityOptions();
+        renderReservationsTable();
+      });
+      amenitySelect.addEventListener("change", renderReservationsTable);
+      nameInput.addEventListener("input", renderReservationsTable);
+
+      updateAmenityOptions();
+      renderReservationsTable();
+    }
+
+    // -----------------------------
+    // Calendar Tab
+    // -----------------------------
+    function initCalendarTab() {
+      const weekInput = document.getElementById("weekInput");
+      const prevWeekBtn = document.getElementById("prevWeekBtn");
+      const nextWeekBtn = document.getElementById("nextWeekBtn");
+      const showOnlyReservedCheckbox = document.getElementById("showOnlyReserved");
+      const collapseEmptyDaysCheckbox = document.getElementById("collapseEmptyDays");
+
+      weekInput.value = toDateInputValue(selectedWeek);
+
+      weekInput.addEventListener("change", () => {
+        const d = new Date(weekInput.value);
+        selectedWeek = getMonday(d);
+        weekInput.value = toDateInputValue(selectedWeek);
+        renderCalendar();
+      });
+
+      prevWeekBtn.addEventListener("click", () => {
+        selectedWeek = new Date(selectedWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+        weekInput.value = toDateInputValue(selectedWeek);
+        renderCalendar();
+      });
+
+      nextWeekBtn.addEventListener("click", () => {
+        selectedWeek = new Date(selectedWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+        weekInput.value = toDateInputValue(selectedWeek);
+        renderCalendar();
+      });
+
+      showOnlyReservedCheckbox.addEventListener("change", renderCalendar);
+      collapseEmptyDaysCheckbox.addEventListener("change", renderCalendar);
+
+      renderCalendar();
+    }
+
+    function buildDailyGrid(dayDate) {
+      const courts = Array.from({ length: 6 }, (_, i) => `Pickleball Court ${i + 1}`);
+      const start = new Date(dayDate);
+      start.setHours(8, 0, 0, 0);
+      const end = new Date(dayDate);
+      end.setHours(22, 0, 0, 0);
+
+      const times = [];
+      let t = new Date(start);
+      while (t <= end) {
+        times.push(formatTime(t));
+        t = new Date(t.getTime() + 30 * 60 * 1000);
+      }
+
+      const grid = times.map(time => {
+        const row = { time };
+        courts.forEach(c => row[c] = "");
+        return row;
+      });
+
+      const entries = Object.values(reservationsData);
+      entries.forEach(r => {
+        const court = r.Amenity;
+        if (!courts.includes(court)) return;
+        if (!r.Date) return;
+        const dtObj = parseDateTime(r.Date);
+        if (dtObj.toDateString() !== dayDate.toDateString()) return;
+        const timeStr = formatTime(dtObj);
+        const row = grid.find(g => g.time === timeStr);
+        if (!row) return;
+        row[court] = r.Name || "";
+      });
+
+      return { courts, grid };
+    }
+
+    function renderCalendar() {
+      const container = document.getElementById("calendar-container");
+      container.innerHTML = "";
+
+      const showOnlyReserved = document.getElementById("showOnlyReserved").checked;
+      const collapseEmptyDays = document.getElementById("collapseEmptyDays").checked;
+
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(selectedWeek.getTime() + i * 24 * 60 * 60 * 1000);
+        const { courts, grid } = buildDailyGrid(day);
+
+        const dayHasRes = grid.some(row =>
+          courts.some(c => row[c] && row[c] !== "")
+        );
+
+        const header = document.createElement("div");
+        header.className = "day-header";
+        header.textContent = formatDayHeader(day);
+        container.appendChild(header);
+
+        if (collapseEmptyDays && !dayHasRes) {
+          const p = document.createElement("div");
+          p.className = "no-reservations";
+          p.textContent = "(No reservations)";
+          container.appendChild(p);
+          continue;
+        }
+
+		let rowsToRender = grid;
+
+		if (showOnlyReserved) {
+		  // Identify which rows have reservations
+		  const reservedMask = grid.map(row =>
+			courts.some(c => row[c] && row[c] !== "")
+		  );
+
+		  const firstIdx = reservedMask.indexOf(true);
+		  const lastIdx = reservedMask.lastIndexOf(true);
+
+		  if (firstIdx !== -1 && lastIdx !== -1) {
+			// Slice from first reserved row to last reserved row
+			rowsToRender = grid.slice(firstIdx, lastIdx + 1);
+		  } else {
+			// No reservations at all
+			rowsToRender = [];
+		  }
+		}
+
+
+        if (rowsToRender.length === 0) {
+          const p = document.createElement("div");
+          p.className = "no-reservations";
+          p.textContent = "(No reservations)";
+          container.appendChild(p);
+          continue;
+        }
+
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const trHead = document.createElement("tr");
+        const thTime = document.createElement("th");
+        thTime.textContent = "Time";
+        trHead.appendChild(thTime);
+        courts.forEach(c => {
+          const th = document.createElement("th");
+          th.textContent = c;
+          trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        rowsToRender.forEach(row => {
+          const tr = document.createElement("tr");
+          const tdTime = document.createElement("td");
+          tdTime.textContent = row.time;
+          tr.appendChild(tdTime);
+          courts.forEach(c => {
+            const td = document.createElement("td");
+            if (row[c]) {
+              td.textContent = row[c];
+              td.className = "reserved";
+            } else {
+              td.textContent = "";
+            }
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+      }
+    }
+
+    // -----------------------------
+    // Cancellations Tab
+    // -----------------------------
+    function renderCancellations() {
+      const container = document.getElementById("cancellations-table-container");
+      const entries = Object.values(cancellationsData);
+      if (entries.length === 0) {
+        container.innerHTML = "<p>No cancellations logged.</p>";
+        return;
+      }
+
+      const cols = Array.from(new Set(entries.flatMap(r => Object.keys(r))));
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const trHead = document.createElement("tr");
+      cols.forEach(c => {
+        const th = document.createElement("th");
+        th.textContent = c;
+        trHead.appendChild(th);
+      });
+      thead.appendChild(trHead);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      entries.forEach(r => {
+        const tr = document.createElement("tr");
+        cols.forEach(c => {
+          const td = document.createElement("td");
+          td.textContent = r[c] !== undefined ? r[c] : "";
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+
+      container.innerHTML = "";
+      container.appendChild(table);
+    }
+
+    // -----------------------------
+    // Start
+    // -----------------------------
+    loadData();
+  </script>
+</body>
+</html>

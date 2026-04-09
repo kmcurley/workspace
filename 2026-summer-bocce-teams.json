@@ -1,0 +1,60 @@
+{
+  "teams": [
+	{
+      "team": 1,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    },
+    {
+      "team": 2,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    },
+    {
+      "team": 3,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    },
+    {
+      "team": 4,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    },
+    {
+      "team": 5,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    },
+    {
+      "team": 6,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    },
+    {
+      "team": 7,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    },
+    {
+      "team": 8,
+      "members": [
+        "Member 1 (C)",
+		"Member 2"
+      ]
+    }
+  ]
+}

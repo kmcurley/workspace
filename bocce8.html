@@ -132,7 +132,7 @@
 
     <h1 style="display: flex; align-items: center; gap: 10px;">
 		<img src="avalon-bocce-icon-80x80.jpg" alt="Avalon Bocce Icon" style="height: 80px;">
-		Avalon Estates Bocce Standings and Schedule
+		2026 Summer Bocce Schedule and Standings
 	</h1>
 
 	<div id="bocce-standings-container"></div>
@@ -186,6 +186,25 @@
 	let asOfDate = "";
 	let gamesPlayed = 0;	
 	let gamesWon = 0;
+	
+	// SET FILANAME VARIABLES
+	const params = new URLSearchParams(window.location.search);
+	console.log(`params=${params}`);
+	const league = params.get("league");
+	console.log(`league=${league}`);
+	filePrefix="2025"
+	if (league) {
+		filePrefix=league;   // your function
+		console.log(`filePrefix=${filePrefix}`);
+	  } 
+	
+	fileStandings=`${filePrefix}-bocce-standings.json`;
+	console.log(`fileStandings=${fileStandings}`);
+	fileSchedule=`${filePrefix}-bocce-schedule.csv`;
+	console.log(`fileSchedule=${fileSchedule}`);
+	fileTeams=`${filePrefix}-bocce-teams.json`;
+	console.log(`fileTeams=${fileTeams}`);
+	
 	console.log(`currentDate=${currentDate}`);
 		
 	// this routine opens a local CSV schedule file 
@@ -224,25 +243,28 @@
 		]
 	  });
 	}
+	
 
     async function loadAndRender() {
       let data;
+	  console.log(`Fetching ${fileStandings}`);
       try {
-        const response = await fetch('2025-bocce-standings.json');
+        const response = await fetch(fileStandings);
         if (!response.ok) throw new Error("Fetch failed");
         data = await response.json();
       } catch (error) {
         console.warn("Using fallback data due to fetch error:", error);
         data = fallbackData;
       }
+	  console.log(`teamData.length=${teamData.length}`);
 	  if ( "1" === "2" ) {
 	    console.log('calling renderTable...');
-		renderTable(data.wins, data.gamesPlayed, data.asOfDate, data.title);
+		renderTable(data.wins, data.gamesPlayed, data.asOfDate, data.title, teamData.length);
 	   } else {
 	    console.log('calling calculateTeamWins...');
 		const wins = calculateTeamWins(data.weeks);
 		console.log('calling renderTable...');
-		renderTable(wins, gamesPlayed, asOfDate, data.title);
+		renderTable(wins, gamesPlayed, asOfDate, data.title, teamData.length);
 	  }
     }
 
@@ -284,9 +306,9 @@
       return wins;
     }
 
-    function renderTable(wins, gamesPlayed, asOfDate, title) {
+    function renderTable(wins, gamesPlayed, asOfDate, title, numberOfTeams) {
 	  console.log('renderTable: starting...');
-      const numTeams = wins.length;
+      const numTeams = numberOfTeams;  // wins.length;
       const table = document.createElement('table');
 
       // Header row
@@ -349,8 +371,9 @@
     }
 
     async function loadTeams() {
+	  console.log(`Fetching ${fileTeams}`);
       try {
-        const response = await fetch('2025-bocce-teams.json');
+        const response = await fetch(fileTeams);
         const data = await response.json();
         teamData = data.teams;
         //renderTeamList();
@@ -552,6 +575,7 @@
             const dataLines = lines.slice(1);
             games = [];
             gameCounter = 1;
+			//console.log(`${dataLines}`);
 
             dataLines.forEach(line => {
                 const cols = line.split(',');
@@ -956,82 +980,12 @@ END:VCALENDAR`;
 	});
 
 	console.log("Calling Load Functions...");
-	window.onload = loadTeams;
+	loadTeams();
 	loadAndRender();
-	tryLoadFile('2025-bocce-schedule.csv');
+	console.log(`Loading ${fileSchedule}`);
+	tryLoadFile(fileSchedule);
 
     </script>
 
 </body>
 </html>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Team Wins Totals</title>
-</head>
-<body>
-  <h1>Team Wins Totals</h1>
-  <p>Open your browser console (F12 → Console tab) to see the info message output.</p>
-
-  <script>
-    // Global variables
-    let asOfDate = "";
-    let gamesPlayed = 0;
-    let gamesWon = 0;
-
-    // Function to total wins and set globals
-    function calculateTeamWins(weeks) {
-      const wins = Array(16).fill(0);
-
-      // Loop through each week
-      weeks.forEach(week => {
-        for (let i = 1; i < week.length; i++) {
-          const teamNumber = week[i];
-          if (teamNumber >= 1 && teamNumber <= 16) {
-            wins[teamNumber - 1]++;
-          }
-        }
-      });
-
-      // Set global gamesPlayed
-      gamesPlayed = weeks.length;
-
-      // Get last week's date (yyyymmdd format at position 0)
-      const lastWeekDate = weeks[weeks.length - 1][0]; // e.g. "20251215"
-      const yyyy = lastWeekDate.substring(0, 4);
-      const mm   = lastWeekDate.substring(4, 6);
-      const dd   = lastWeekDate.substring(6, 8);
-
-      // Set global asOfDate in mm/dd/yyyy format
-      asOfDate = mm + "/" + dd + "/" + yyyy;
-
-      // Calculate total games won (sum of wins array)
-      gamesWon = wins.reduce((sum, val) => sum + val, 0);
-
-      // Display info message
-      console.info("Games Played:", gamesPlayed, 
-                   "Games Won:", gamesWon, 
-                   "As Of:", asOfDate, 
-                   "Wins:", wins);
-
-      return wins;
-    }
-
-    // Example weeks data (yyyymmdd at position 0)
-    const weeks = [
-      ["20251201", 1, 5, 8, 12, 3, 7, 10, 16],
-      ["20251208", 2, 4, 6, 9, 11, 13, 14, 15],
-      ["20251215", 1, 2, 3, 4, 5, 6, 7, 8]
-    ];
-
-    // Run calculation
-    const totals = calculateTeamWins(weeks);
-  </script>
-</body>
-
-</html>
-
-
-

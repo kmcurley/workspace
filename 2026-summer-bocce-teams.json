@@ -1,59 +1,76 @@
 {
   "teams": [
-	{
+    {
       "team": 1,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"Hank Greenberg",
+		"Glenn Haft (C)",
+		"Judy Selig",
+		"Robert Wagner"
       ]
     },
     {
       "team": 2,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"Steve Askinas (C)",
+		"Salma Facio",
+		"Craig Goodwin",
+		"Ron Holzman"
       ]
     },
     {
       "team": 3,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"Stan Einhorn",
+		"Renato Facio (C)",
+		"Marshall Goldstein",
+		"Joan Hasluck"
       ]
     },
     {
       "team": 4,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"Jon Basset",
+		"Peter Gardner (C)",
+		"Dena Goldberg",
+		"Myra Slomiak"
       ]
     },
     {
       "team": 5,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"James Cantore",
+		"Carol Haft",
+		"Marc Lurie",
+		"Ralph Susca (C)"
       ]
     },
     {
       "team": 6,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"Jerry Bellse",
+		"Lois Lubell",
+		"Maria Murray",
+		"Stephanie Pessenda (C)"
       ]
     },
     {
       "team": 7,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"Beth Fischer",
+		"Mariann Gardner",
+		"Pam Holzman",
+		"Stan Silverberg (C)"
       ]
     },
     {
       "team": 8,
       "members": [
-        "Member 1 (C)",
-		"Member 2"
+		"Lloyd Hasluck (C)",
+		"Eli Kabrun",
+		"Larry Pleat",
+		"Howard Saltzman",
+		"Linda Simms"
       ]
     }
   ]

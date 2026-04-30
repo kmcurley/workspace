@@ -249,7 +249,7 @@
       let data;
 	  console.log(`Fetching ${fileStandings}`);
       try {
-        const response = await fetch(fileStandings);
+        const response = await fetch(fileStandings, { cache: 'reload' });
         if (!response.ok) throw new Error("Fetch failed");
         data = await response.json();
       } catch (error) {
@@ -373,7 +373,7 @@
     async function loadTeams() {
 	  console.log(`Fetching ${fileTeams}`);
       try {
-        const response = await fetch(fileTeams);
+        const response = await fetch(fileTeams, { cache: 'reload' });
         const data = await response.json();
         teamData = data.teams;
         //renderTeamList();
@@ -514,7 +514,7 @@
 			(async function trySequential(){
 			console.log(`url(${url})`);
 			try {
-				const res = await fetch(url);
+				const res = await fetch(url, { cache: 'reload' });
 				if(!res.ok) throw new Error('fetch failed ' + res.status);
 				const text = await res.text();
 				inputContainer.disabled = true;

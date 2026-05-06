@@ -7,6 +7,7 @@
 	<link rel="icon" type="image/png" href="avalon-bocce-icon-80x80.jpg">
     <title>Avalon Estates Bocce Schedule</title>
     <style>
+
         /* Basic Table Styling for readability */
         body {
             font-family: Arial, sans-serif;
@@ -17,6 +18,14 @@
             border-collapse: collapse;
             margin-bottom: 15px;
         }
+		/* Colors entire tbody blocks alternately */
+		table tbody:nth-child(odd) {
+		  background-color: #D3D3D3;
+		}
+
+		table tbody:nth-child(even) {
+		  background-color: #ffffff;
+		}
         th, td {
             border: 1px solid #ddd;
             padding: 5px;
@@ -144,18 +153,19 @@
         </div>	
         
         <div id="scheduleContainer" style="display: none;">
-            <label for="teamFilter">Filter by Team:</label>
+            <label for="teamFilter">Filter by Team:&nbsp;&nbsp;</label>
             <select id="teamFilter" onchange="filterSchedule()">
                 <option value="">Show All</option>
             </select>
-			&nbsp;&nbsp;<button id='downloadBtn' disabled>Download by Team (.ics)</button>&nbsp;&nbsp;
-            <button onclick="generateIcs('all')">Download All Games (.ics)</button>
+			<label>&nbsp;&nbsp;Download calendar entries:</label>
+			&nbsp;&nbsp;<button id='downloadBtn' disabled>Team Schedule</button>&nbsp;&nbsp;
+            <button onclick="generateIcs('all')">All Games Schedule</button>
         </div>
     </div>
     
     <div id="selectionInfo" style="margin-top: 20px; display: none;">
-        <p><strong>Click a row</strong> to select a game, then click the 'Download Selected Game (.ics)' button below.</p>
-        <button id="downloadSelected" onclick="generateIcs('selected')" disabled>Download Selected Game (.ics)</button>
+        <p><strong>Click a row</strong> to select a game, then click the 'Download Selected Game Schedlue' button below.</p>
+        <button id="downloadSelected" onclick="generateIcs('selected')" disabled>Download Selected Game Schedule</button>
     </div>
 	
 	    <!--<div class="table-wrapper" id="tableDisplay">-->
@@ -187,16 +197,32 @@
 	let gamesPlayed = 0;	
 	let gamesWon = 0;
 	
+	console.log(`navigator.userAgent=${navigator.userAgent}`);
+	const isApp = navigator.userAgent.includes("AvalonBocceApp");
+
+	
 	// SET FILANAME VARIABLES
 	const params = new URLSearchParams(window.location.search);
 	console.log(`params=${params}`);
 	const league = params.get("league");
 	console.log(`league=${league}`);
-	filePrefix="2026-summer"
+	filePrefix="2026-summer";
 	if (league) {
 		filePrefix=league;   // your function
 		console.log(`filePrefix=${filePrefix}`);
-	  } 
+	} 
+	const tstyle = params.get("tstyle");  
+	console.log(`tstyle=${tstyle}`);
+	tableStyle="1";
+	if (tstyle) {
+		if (tstyle === "1" || tstyle === "2") {
+			tableStyle=tstyle;
+			console.log(`tableStyle=${tableStyle}`);
+		  } else {
+			tableStyle="1";
+			console.log(`Passed tstyle invalid: "${tstyle}".  tableStyle set to "1"`);
+		}	
+	} 	
 	
 	fileStandings=`${filePrefix}-bocce-standings.json`;
 	console.log(`fileStandings=${fileStandings}`);
@@ -243,13 +269,13 @@
 		]
 	  });
 	}
-	
+
 
     async function loadAndRender() {
       let data;
 	  console.log(`Fetching ${fileStandings}`);
       try {
-        const response = await fetch(fileStandings);
+        const response = await fetch(fileStandings, { cache: 'reload' });
         if (!response.ok) throw new Error("Fetch failed");
         data = await response.json();
       } catch (error) {
@@ -373,7 +399,7 @@
     async function loadTeams() {
 	  console.log(`Fetching ${fileTeams}`);
       try {
-        const response = await fetch(fileTeams);
+        const response = await fetch(fileTeams, { cache: 'reload' });
         const data = await response.json();
         teamData = data.teams;
         //renderTeamList();
@@ -514,7 +540,7 @@
 			(async function trySequential(){
 			console.log(`url(${url})`);
 			try {
-				const res = await fetch(url);
+				const res = await fetch(url, { cache: 'reload' });
 				if(!res.ok) throw new Error('fetch failed ' + res.status);
 				const text = await res.text();
 				inputContainer.disabled = true;
@@ -660,7 +686,7 @@
             const timeMap = {}; 
             uniqueTime24.forEach(t24 => {
                 const game = data.find(g => g.time24 === t24);
-                if (game) timeMap[t24] = game.time12;
+                if (game) timeMap[t24] = game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "");
             });
 
 
@@ -673,51 +699,99 @@
                 }
                 pivotedData[key].push(game); 
             });
+			let tableHTML= ''
+			if (tableStyle === "1") {
+				// 3. Build the HTML Table
+				tableHTML = `
+					<table>
+						<thead>
+							<tr>
+								<th style="width: 15%;">Date</th>
+								${uniqueTime24.map(t24 => `<th>${timeMap[t24]}</th>`).join('')}
+							</tr>
+						</thead>
+						<tbody id="scheduleBody">
+				`;
+				
+				uniqueDates.forEach(date => {
+					tableHTML += `<tbody><tr><td>${date}</td>`;
+					
+					uniqueTime24.forEach(time24 => {
+						const key = `${date}-${time24}`;
+						const gamesForSlot = pivotedData[key] || [];
+						//const mytime = g.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "");
+						if (gamesForSlot.length > 0) {
+							// Concatenate multiple games into one cell, using a line break
+							const cellContent = gamesForSlot.map(game => `
+								<div class="game-row" 
+									data-game-id="${game.id}" 
+									onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
+									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+									<strong>${game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "")}</strong><br>
+									<strong>${game.court}</strong><br>
+									${game.teamA} vs ${game.teamB}
+									<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
+								</div>
+							`).join('');
 
+							tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`;
 
-            // 3. Build the HTML Table
-            let tableHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 15%;">Date</th>
-                            ${uniqueTime24.map(t24 => `<th>${timeMap[t24]}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody id="scheduleBody">
-            `;
-            
-            uniqueDates.forEach(date => {
-                tableHTML += `<tr><td>${date}</td>`;
-                
-                uniqueTime24.forEach(time24 => {
-                    const key = `${date}-${time24}`;
-                    const gamesForSlot = pivotedData[key] || [];
-                    
-                    if (gamesForSlot.length > 0) {
-                        // Concatenate multiple games into one cell, using a line break
-                        const cellContent = gamesForSlot.map(game => `
-                            <div class="game-row" 
-                                data-game-id="${game.id}" 
-                                onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
-                                style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
-								<strong>${game.time12}</strong><br>
-                                <strong>${game.court}</strong><br>
-                                ${game.teamA} vs ${game.teamB}
-                                <div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
-                            </div>
-                        `).join('');
+						} else {
+							// Empty cell
+							tableHTML += `<td></td>`;
+						}
+					});
+						
+					tableHTML += `</tr></tbody>`;
+				});					
 
-                        tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`;
+			  } else {
+				// 3. Build the HTML Table
+				tableHTML = `
+					<table>
+						<thead>
+							<tr>
+								<th style="text-align: center; width: 15%;">Date</th><th style="text-align: center;">Time</th>
+								<th style="text-align: center;">Court 1</th><th style="text-align: center;">Court 2</th>
+							</tr>
+						</thead>
+						<tbody id="scheduleBody">
+				`;
+				
+				uniqueDates.forEach(date => {
+					tableHTML += `<tbody><tr><td rowspan="2" style="text-align: center;">${date}</td>`;
+					
+					uniqueTime24.forEach(time24 => {
+						const key = `${date}-${time24}`;
+						const gamesForSlot = pivotedData[key] || [];
+						tableHTML += `<td style="text-align: center;">${time24}</td>`;
+						if (gamesForSlot.length > 0) {
+							// Concatenate multiple games into one cell, using a line break
+							const cellContent = gamesForSlot.map(game => `
+								<td style="vertical-align: top; text-align: center;"
+								<div class="game-row" 
+									data-game-id="${game.id}" 
+									onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
+									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+									<strong>${game.court}</strong><br>
+									${game.teamA} vs ${game.teamB}
+									<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
+								</div>
+								</td>
+							`).join('');
 
-                    } else {
-                        // Empty cell
-                        tableHTML += `<td></td>`;
-                    }
-                });
-                
-                tableHTML += `</tr>`;
-            });
+							<!-- tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`; -->
+							tableHTML += `${cellContent}</tr><tr>`;
+
+						} else {
+							// Empty cell
+							tableHTML += `<td></td>`;
+						}
+					});
+						
+					tableHTML += `</tr></tbody>`;
+				});
+			}		
             
             tableHTML += '</tbody></table>';
             tableDisplay.innerHTML = tableHTML;

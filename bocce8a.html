@@ -632,7 +632,7 @@
                 }
             });
 
-            if (games.length > 0) {
+            if (games.length > 0 && isApp === false) {
                 document.getElementById('scheduleContainer').style.display = 'flex';
                 //document.getElementById('selectionInfo').style.display = 'block';
                 initScheduleDisplay();

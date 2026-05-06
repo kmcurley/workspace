@@ -196,10 +196,14 @@
 	let asOfDate = "";
 	let gamesPlayed = 0;	
 	let gamesWon = 0;
+	let appCall = "";
 	
 	console.log(`navigator.userAgent=${navigator.userAgent}`);
 	const isApp = navigator.userAgent.includes("AvalonBocceApp");
-
+	if (isApp) {
+		//document.querySelectorAll(".ics-download").forEach(btn => {btn.style.display = "none";});
+		appCall = '(...)';
+	}
 	
 	// SET FILANAME VARIABLES
 	const params = new URLSearchParams(window.location.search);
@@ -343,7 +347,8 @@
       const titleCell = document.createElement('td');
       titleCell.colSpan = numTeams;
       titleCell.className = 'bold';
-      titleCell.textContent = `${title} ${asOfDate}.  Games played so far: ${gamesWon}`;
+      //titleCell.textContent = `${title} ${asOfDate}.  Games played so far: ${gamesWon}`;
+	  titleCell.textContent = `${title} ${asOfDate} ${appCall}`;
       titleRow.appendChild(titleCell);
       table.appendChild(titleRow);
 

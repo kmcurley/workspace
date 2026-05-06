@@ -157,9 +157,11 @@
             <select id="teamFilter" onchange="filterSchedule()">
                 <option value="">Show All</option>
             </select>
+			<div id="downloadBtns">
 			<label>&nbsp;&nbsp;Download calendar entries:</label>
 			&nbsp;&nbsp;<button id='downloadBtn' disabled>Team Schedule</button>&nbsp;&nbsp;
             <button onclick="generateIcs('all')">All Games Schedule</button>
+			</div>
         </div>
     </div>
     
@@ -196,10 +198,11 @@
 	let asOfDate = "";
 	let gamesPlayed = 0;	
 	let gamesWon = 0;
+	let isApp = false;
 	let appCall = "";
 	
 	console.log(`navigator.userAgent=${navigator.userAgent}`);
-	const isApp = navigator.userAgent.includes("AvalonBocceApp");
+	isApp = navigator.userAgent.includes("AvalonBocceApp");
 	if (isApp) {
 		//document.querySelectorAll(".ics-download").forEach(btn => {btn.style.display = "none";});
 		appCall = '(...)';
@@ -632,9 +635,12 @@
                 }
             });
 
-            if (games.length > 0 && isApp === false) {
-                document.getElementById('scheduleContainer').style.display = 'flex';
-                //document.getElementById('selectionInfo').style.display = 'block';
+            if (games.length > 0) {				
+				document.getElementById('scheduleContainer').style.display = 'flex';
+				//document.getElementById('selectionInfo').style.display = 'block';
+				if (isApp) {
+					document.getElementById('downloadBtns').style.display = 'none';
+				}
                 initScheduleDisplay();
             } else {
                 alert("No valid game data found after parsing the CSV. Please check your columns.");

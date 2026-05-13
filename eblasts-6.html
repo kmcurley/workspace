@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Eblast History</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid #ccc; }
+  th { background: #f0f0f0; text-align: left; }
+  tr:hover { background: #e8f4ff; cursor: pointer; }
+  .filters { margin-bottom: 15px; }
+  .filters input { padding: 6px; margin-right: 10px; }
+  #count { font-weight: bold; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Eblast History</h2>
+
+<div style="display: none">
+<label>
+  Show me Ebalsts in the last 
+  <input type="number" id="daysBack" value="10" min="1" max="30" 
+       style="width:50px; text-align:right;"> days.
+</label>
+<button onclick="applyDaysBack()">Go</button>
+<br><br>
+</div>
+
+<div class="filters" style="display: none">
+  <label>Date: <input type="date" id="filterDate"></label>
+  <label>Subject: <input type="text" id="filterSubject" placeholder="Search subject"></label>
+  <button onclick="applyFilters()">Apply</button>
+  <button onclick="clearFilters()">Clear</button>
+</div>
+
+<div id="statsLine" style="font-weight:bold; margin-bottom:10px;"></div>
+<div>
+Click on the subject line to display a popup window with the eBlast content.
+</div>
+
+<table id="eblastTable">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Subject</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+let allData = [];
+let currentList = [];
+
+// Force refresh by adding a timestamp query parameter
+function loadIndex() {
+  const url = "eblast_index.json?ts=" + Date.now();
+
+  fetch(url, { cache: "no-store" })
+    .then(response => response.json())
+    .then(data => {
+      data.sort((a, b) => (a.datetime < b.datetime ? 1 : -1));
+      allData = data;
+      renderTable(allData);
+    });
+}
+
+function applyDaysBack() {
+    const days = parseInt(document.getElementById("daysBack").value, 10);
+    if (isNaN(days) || days < 1) return;
+
+    const now = new Date();
+    const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
+
+    const filtered = allData.filter(item => {
+        const [y, m, d] = item.datetime.split("-");
+        const itemDate = new Date(`${y}-${m}-${d}`);
+        return itemDate >= cutoff;
+    });
+
+    renderTable(filtered);
+}
+
+function renderTable(list) {
+  currentList = list;
+
+  const tbody = document.querySelector("#eblastTable tbody");
+  tbody.innerHTML = "";
+
+  list.forEach((item, i) => {
+    const [year, month, day, hour, minute, second] = item.datetime.split("-");
+    const date = `${month}/${day}/${year}`;
+    const time = `${hour}:${minute}:${second}`;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${date}</td>
+      <td>${time}</td>
+      <td>${item.subject}</td>
+    `;
+
+    tr.addEventListener("click", () => openEmailPopup(i, currentList));
+
+    tbody.appendChild(tr);
+  });
+
+	// Total Eblasts
+	const total = list.length;
+
+	// Days Covered
+	let daysCovered = 0;
+
+	if (list.length > 1) {
+	  const dates = list.map(item => {
+		const [y, m, d] = item.datetime.split("-");
+		return new Date(`${y}-${m}-${d}`);
+	  });
+
+	  const minDate = new Date(Math.min(...dates));
+	  const maxDate = new Date(Math.max(...dates));
+
+	  const diffMs = maxDate - minDate;
+	  daysCovered = Math.round(diffMs / (1000 * 60 * 60 * 24));
+	  daysCovered++;
+	}
+
+	// Update single-line stats
+	document.getElementById("statsLine").textContent =
+	  `Days Covered: ${daysCovered}   |   Total Eblasts: ${total}`;
+}
+
+function applyFilters() {
+  const dateVal = document.getElementById("filterDate").value;
+  const subjectVal = document.getElementById("filterSubject").value.toLowerCase();
+
+  let filtered = allData;
+
+  if (dateVal) {
+    const [yyyy, mm, dd] = dateVal.split("-");
+    const target = `${mm}/${dd}/${yyyy}`;
+    filtered = filtered.filter(item => {
+      const [y, m, d] = item.datetime.split("-");
+      return `${m}/${d}/${y}` === target;
+    });
+  }
+
+  if (subjectVal) {
+    filtered = filtered.filter(item =>
+      item.subject.toLowerCase().includes(subjectVal)
+    );
+  }
+
+  renderTable(filtered);
+}
+
+function clearFilters() {
+  document.getElementById("filterDate").value = "";
+  document.getElementById("filterSubject").value = "";
+  renderTable(allData);
+}
+
+// Popup window for email content
+function openEmailPopup(startIndex, list) {
+  const popup = window.open("", "_blank", "width=900,height=700,scrollbars=yes");
+
+  popup.document.write(
+    "<!DOCTYPE html>" +
+    "<html><head><title>Email</title>" +
+    "<style>" +
+    ".navbtn{padding:6px 12px;margin-right:10px;background:#e0e0e0;border:1px solid #888;cursor:pointer;font-family:Arial;}" +
+    "#nav{margin-bottom:15px;font-family:Arial;}" +
+    "</style>" +
+    "</head><body>" +
+    "<div id='nav'></div>" +
+    "<div id='content'>Loading...</div>" +
+    "</body></html>"
+  );
+  popup.document.close();
+
+  // Store filtered list + index
+  popup.indexList = list.slice();
+  popup.currentIndex = startIndex;
+
+  // Render navigation buttons
+  popup.renderNav = function () {
+    const doc = popup.document;
+    const nav = doc.getElementById("nav");
+    nav.innerHTML = "";
+
+    const info = doc.createElement("span");
+    info.textContent = "Email " + (popup.currentIndex + 1) + " of " + popup.indexList.length;
+    info.style.marginRight = "15px";
+    nav.appendChild(info);
+
+    const prevBtn = doc.createElement("button");
+    prevBtn.textContent = "Prev";
+    prevBtn.className = "navbtn";
+    prevBtn.disabled = (popup.currentIndex === 0);
+    prevBtn.onclick = popup.navigatePrev;
+    nav.appendChild(prevBtn);
+
+    const nextBtn = doc.createElement("button");
+    nextBtn.textContent = "Next";
+    nextBtn.className = "navbtn";
+    nextBtn.disabled = (popup.currentIndex === popup.indexList.length - 1);
+    nextBtn.onclick = popup.navigateNext;
+    nav.appendChild(nextBtn);
+  };
+
+  // Load email HTML directly from JSON
+  popup.loadEmailAt = function (idx) {
+    const item = popup.indexList[idx];
+    popup.currentIndex = idx;
+    popup.document.getElementById("content").innerHTML = item.html;
+    popup.renderNav();
+	popup.document.getElementById("content").innerHTML = item.html;
+	// Inject responsive image CSS into the popup
+	popup.document.head.insertAdjacentHTML(
+		"beforeend",
+		`<style>
+			img {
+			max-width: 100% !important;
+			height: auto !important;
+			object-fit: contain !important;
+			}
+		</style>`
+	);
+	popup.renderNav();
+  };
+
+  popup.navigatePrev = function () {
+    if (popup.currentIndex > 0) {
+      popup.loadEmailAt(popup.currentIndex - 1);
+    }
+  };
+
+  popup.navigateNext = function () {
+    if (popup.currentIndex < popup.indexList.length - 1) {
+      popup.loadEmailAt(popup.currentIndex + 1);
+    }
+  };
+
+  // Initial load
+  popup.loadEmailAt(startIndex);
+}
+
+loadIndex();
+
+window.onload = () => {
+	console.log(`onLoad calling applyDaysBack`);
+    document.getElementById("daysBack").value = 10;
+    applyDaysBack();
+};
+</script>
+
+</body>
+</html>

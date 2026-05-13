@@ -36,8 +36,8 @@
 </div>
 
 <div id="statsLine" style="font-weight:bold; margin-bottom:10px;"></div>
-<div>
-Click on the subject line to display a popup window with the eBlast content.
+<div id="statsLine2" style="font-weight:bold; margin-bottom:10px;">
+Click on the email subject line to display the email content.
 </div>
 
 <table id="eblastTable">
@@ -53,6 +53,7 @@ Click on the subject line to display a popup window with the eBlast content.
 
 <!-- NEW: email viewer area -->
 <div id="viewer-nav" style="display:none; margin-top:10px;">
+  <span id="position">Email 1 of 2</span>
   <button id="prevBtn">Prev</button>
   <button id="nextBtn">Next</button>
   <button id="backBtn">Back to eBlast List</button>
@@ -194,8 +195,12 @@ function loadEmailAt(idx) {
   currentIndex = idx;
 
   document.getElementById("eblastTable").style.display = "none";
+  document.getElementById("statsLine").style.display = "none";
+  document.getElementById("statsLine2").style.display = "none";
   document.getElementById("viewer-nav").style.display = "block";
   document.getElementById("content").style.display = "block";
+  
+  document.getElementById("position").textContent = "Email " + (currentIndex + 1) + " of " + allData.length;
 
   const contentEl = document.getElementById("content");
   contentEl.innerHTML = item.html;
@@ -220,6 +225,8 @@ document.getElementById("backBtn").onclick = function () {
   document.getElementById("viewer-nav").style.display = "none";
   document.getElementById("content").style.display = "none";
   document.getElementById("eblastTable").style.display = "table";
+  document.getElementById("statsLine").style.display = "block";
+  document.getElementById("statsLine2").style.display = "block";
 };
 
 // Popup window for email content

@@ -1,0 +1,25 @@
+<http>
+<script>
+async function downloadPDF(pdfUrl, fileName = "download.pdf") {
+  try {
+    const response = await fetch(pdfUrl, { mode: "cors" });
+    const blob = await response.blob();
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+
+    document.body.appendChild(link);
+    link.click();
+
+    URL.revokeObjectURL(link.href);
+    link.remove();
+  } catch (err) {
+    console.error("Failed to download PDF:", err);
+  }
+}
+
+// Usage:
+downloadPDF("https://www.avalon-estates.com/editor_upload/File/BOD%20Meetings/BOD%20Meeting%20Minutes/2026/2026-04-23%20BOD%20Meeting%20Minutes.pdf", "myfile.pdf");
+</script>
+</html>

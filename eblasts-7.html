@@ -4,69 +4,109 @@
 <meta charset="UTF-8">
 <title>Eblast History</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-  th, td { padding: 8px 12px; border-bottom: 1px solid #ccc; }
-  th { background: #f0f0f0; text-align: left; }
-  tr:hover { background: #e8f4ff; cursor: pointer; }
-  .filters { margin-bottom: 15px; }
-  .filters input { padding: 6px; margin-right: 10px; }
-  #count { font-weight: bold; margin-bottom: 10px; }
+	body { font-family: Arial, sans-serif; margin: 20px; }
+	table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+	th, td { padding: 8px 12px; border-bottom: 1px solid #ccc; }
+	th { background: #f0f0f0; text-align: left; }
+	tr:hover { background: #e8f4ff; cursor: pointer; }
+	.filters { margin-bottom: 15px; }
+	.filters input { padding: 6px; margin-right: 10px; }
+	#count { font-weight: bold; margin-bottom: 10px; }
+	html, body {
+		height: 100%;
+		margin: 0;
+	}
+	
+	#scrollArea {
+		flex: 1;
+		overflow-y: auto;
+		display: block;
+	}
+
+	body {
+		display: flex;
+		flex-direction: column;
+	}
+
+	header, #filters {
+		flex-shrink: 0; /* header never scrolls */
+	}
+
+	#tableWrapper, #content {
+		padding: 10px;
+	}
+
+	header {
+		position: sticky;
+		top: 0;
+		background: white;
+
+		border-bottom: 2px solid #ccc;
+		z-index: 10;
+	}
+	
+	tr.selected-row {
+		background-color: #e0e0e0 !important;
+	}
+
 </style>
+
 </head>
 <body>
 
 <h2>Eblast History</h2>
 
-<div style="display: none">
-<label>
-  Show me Ebalsts in the last 
-  <input type="number" id="daysBack" value="10" min="1" max="30" 
-       style="width:50px; text-align:right;"> days.
-</label>
-<button onclick="applyDaysBack()">Go</button>
-<br><br>
+	<div id="filters" class="filters" >
+		<label>
+		Show me Ebalsts in the last 
+		<input type="number" id="daysBack" value="10" min="1" max="30" 
+		   style="width:50px; text-align:right;"> days.
+		</label>
+		<button onclick="applyDaysBack()">Show</button>
+		<hr>
+	   <label>Date: <input type="date" id="filterDate"></label>
+	   <label>Subject: <input type="text" id="filterSubject" placeholder="Search subject"></label>
+	   <button onclick="applyFilters()">Apply</button>
+	   <button onclick="clearFilters()">Clear</button>
+	   <hr>
+		<div id="statsLine" style="font-weight:bold; margin-bottom:10px;"></div>
+		<div id="statsLine2" style="font-weight:bold; margin-bottom:10px;"></div>
+		Click on the email subject line to display the email content.   
+	</div>
+
+	<!-- NEW: email viewer area -->
+	<div id="viewer-nav" style="display:none; margin-top:10px;">
+	  <span id="position">Email 1 of 2</span>
+	  <button id="prevBtn">Prev</button>
+	  <button id="nextBtn">Next</button>
+	  <button id="backBtn">Back to eBlast List</button>
+	  <hr>
+	</div>
+
+<div id="scrollArea">
+	<div id="tableWrapper" class="data-container">
+		<table id="eblastTable">
+		  <thead>
+			<tr>
+			  <th>Date</th>
+			  <th>Time</th>
+			  <th>Subject</th>
+			</tr>
+		  </thead>
+		  <tbody></tbody>
+		</table>
+	</div>
+	
+	<div id="content" style="display:none; padding:10px; border:1px solid #ccc;"></div>
 </div>
-
-<div class="filters" style="display: none">
-  <label>Date: <input type="date" id="filterDate"></label>
-  <label>Subject: <input type="text" id="filterSubject" placeholder="Search subject"></label>
-  <button onclick="applyFilters()">Apply</button>
-  <button onclick="clearFilters()">Clear</button>
-</div>
-
-<div id="statsLine" style="font-weight:bold; margin-bottom:10px;"></div>
-<div id="statsLine2" style="font-weight:bold; margin-bottom:10px;">
-Click on the email subject line to display the email content.
-</div>
-
-<table id="eblastTable">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Time</th>
-      <th>Subject</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<!-- NEW: email viewer area -->
-<div id="viewer-nav" style="display:none; margin-top:10px;">
-  <span id="position">Email 1 of 2</span>
-  <button id="prevBtn">Prev</button>
-  <button id="nextBtn">Next</button>
-  <button id="backBtn">Back to eBlast List</button>
-</div>
-
-<div id="content" style="display:none; padding:10px; border:1px solid #ccc;"></div>
-
 
 <script>
 let allData = [];
 let currentList = [];
 let indexList = [];      // filled after loading JSON
 let currentIndex = -1;
+let savedScrollTop = 0;
+let selectedRowIndex = null;
 
 
 // Force refresh by adding a timestamp query parameter
@@ -94,7 +134,9 @@ function applyDaysBack() {
         const itemDate = new Date(`${y}-${m}-${d}`);
         return itemDate >= cutoff;
     });
-
+	document.getElementById("scrollArea").scrollTop = 1;
+	selectedRowIndex = null;
+	
     renderTable(filtered);
 }
 
@@ -110,6 +152,11 @@ function renderTable(list) {
     const time = `${hour}:${minute}:${second}`;
 
     const tr = document.createElement("tr");
+	// Apply highlight if this row was previously selected
+	if (i === selectedRowIndex) {	
+		tr.classList.add("selected-row");
+	}
+
     tr.innerHTML = `
       <td>${date}</td>
       <td>${time}</td>
@@ -117,7 +164,12 @@ function renderTable(list) {
     `;
 
     //tr.addEventListener("click", () => openEmailPopup(i, currentList));
-	tr.addEventListener("click", () => loadEmailAt(i));
+	//tr.addEventListener("click", () => loadEmailAt(i));
+	tr.addEventListener("click", () => {
+		selectedRowIndex = i;   // remember which row was clicked
+		loadEmailAt(i);
+	});
+
 
     tbody.appendChild(tr);
   });
@@ -174,6 +226,7 @@ function applyFilters() {
 function clearFilters() {
   document.getElementById("filterDate").value = "";
   document.getElementById("filterSubject").value = "";
+  selectedRowIndex = null;
   renderTable(allData);
 }
 
@@ -189,18 +242,27 @@ function loadEmailInPage(idx, list) {
 }
 
 function loadEmailAt(idx) {
-  const item = allData[idx];   // ← use your existing array
-  if (!item) return;
+  //const item = allData[idx];   // ← use your existing array
+  const item = currentList[idx];   // ← use current renderTable
+  if (!item) return;  
 
   currentIndex = idx;
+  document.getElementById("prevBtn").disabled = (currentIndex === 0);
+  document.getElementById("nextBtn").disabled = (currentIndex === currentList.length - 1);
+  
+  // SAVE SCROLL POSITION
+  savedScrollTop = document.getElementById("scrollArea").scrollTop;
+  document.getElementById("scrollArea").scrollTop = 1;
 
-  document.getElementById("eblastTable").style.display = "none";
+  document.getElementById("filters").style.display = "none";
+  document.getElementById("eblastTable").style.display = "none";	
   document.getElementById("statsLine").style.display = "none";
   document.getElementById("statsLine2").style.display = "none";
   document.getElementById("viewer-nav").style.display = "block";
   document.getElementById("content").style.display = "block";
   
-  document.getElementById("position").textContent = "Email " + (currentIndex + 1) + " of " + allData.length;
+  //document.getElementById("position").textContent = "Email " + (currentIndex + 1) + " of " + allData.length;
+  document.getElementById("position").textContent = "Email " + (currentIndex + 1) + " of " + currentList.length;
 
   const contentEl = document.getElementById("content");
   contentEl.innerHTML = item.html;
@@ -214,19 +276,28 @@ function loadEmailAt(idx) {
 }
 
 document.getElementById("prevBtn").onclick = function () {
-  if (currentIndex > 0) loadEmailAt(currentIndex - 1);
+	if (currentIndex > 0) loadEmailAt(currentIndex - 1);
 };
 
 document.getElementById("nextBtn").onclick = function () {
-  if (currentIndex < allData.length - 1) loadEmailAt(currentIndex + 1);
+	if (currentIndex < currentList.length - 1) loadEmailAt(currentIndex + 1);
 };
 
 document.getElementById("backBtn").onclick = function () {
-  document.getElementById("viewer-nav").style.display = "none";
-  document.getElementById("content").style.display = "none";
-  document.getElementById("eblastTable").style.display = "table";
-  document.getElementById("statsLine").style.display = "block";
-  document.getElementById("statsLine2").style.display = "block";
+	document.getElementById("viewer-nav").style.display = "none";
+	document.getElementById("content").style.display = "none";
+	document.getElementById("eblastTable").style.display = "table";
+	document.getElementById("statsLine").style.display = "block";
+	document.getElementById("statsLine2").style.display = "block";
+	document.getElementById("filters").style.display = "block";
+    // Reapply highlight
+    const rows = document.querySelectorAll("#eblastTable tbody tr");
+    rows.forEach((row, idx) => {
+        if (idx === selectedRowIndex) row.classList.add("selected-row");
+        else row.classList.remove("selected-row");
+    });  
+	// RESTORE SCROLL POSITION
+	document.getElementById("scrollArea").scrollTop = savedScrollTop;  
 };
 
 // Popup window for email content

@@ -521,8 +521,15 @@ function wireUI(){
     state.searches = [];
     if(state.header && state.header.length){
       state.visibleColumns = [...state.header];
-	  if ( woColumnName.includes(state.header[0]) && woColumnName.includes(state.header[0]) ) {
+	  if ( woColumnName.includes(state.header[0]) && woColumnName.includes(state.header[1]) ) {
+	    // setup display columns, sort and search for a work order spreadsheet
 		state.visibleColumns = [...woColumnName];
+		const id = 'sort-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+		const newSort = { id, col: 'Date', dir: 'asc' };
+		state.sorts.push(newSort);
+		const id1 = 'search-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+		const newSearch = { id1, col: 'Open/Closed', value: 'open', op: 'contains'};
+		state.searches.push(newSearch);		
 	  }
     }
     renderControls();
@@ -587,7 +594,7 @@ function tryFetchTicIdList(){
     console.log('tryFetchTicIdList: check list to see if array');
     if(Array.isArray(list)){
       state.ticId = list;
-	  console.log(`tryFetchTicIdList: array size is ${list.length}`);
+	  console.log(`tryFetchTicIdList: array size is ${state.ticId.length}`);
     }
   }).catch(err=>{
 	console.error('tryFetchTicIdList: Fetch error:', err)
@@ -793,8 +800,17 @@ function processCsvText(text, sourceLabel){
     if(!state.visibleColumns || state.visibleColumns.length === 0 || state.visibleColumns.length !== header.length){
 	  // KC visiblecolumns
       state.visibleColumns = [...header];
-	  if ( woColumnName.includes(header[0]) && woColumnName.includes(header[0]) ) {
+	  if ( woColumnName.includes(header[0]) && woColumnName.includes(header[1]) ) {
+	    // setup display columns, sort and search for a work order spreadsheet
 		state.visibleColumns = [...woColumnName];
+		state.sorts = [];
+		state.searches = [];
+		const id = 'sort-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+		const newSort = { id, col: 'Date', dir: 'asc' };
+		state.sorts.push(newSort);
+		const id1 = 'search-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+		const newSearch = { id1, col: 'Open/Closed', value: 'open', op: 'contains'};
+		state.searches.push(newSearch);
 	  }	  
     }
     qs('#csv-loaded').textContent = sourceLabel || 'loaded';
@@ -982,6 +998,7 @@ function addSortControl(){
   const defaultCol = (state.header && state.header[0]) || '';
   const newSort = { id, col: defaultCol, dir: 'asc' };
   state.sorts.push(newSort);
+  console.log(state.sorts);
   renderControls();
 }
 
@@ -991,6 +1008,7 @@ function addSearchControl(){
   const defaultCol = state.header[0];
   const newSearch = { id, col: defaultCol, value: '' };
   state.searches.push(newSearch);
+  console.log(state.searches);
   renderControls();
 }
 
@@ -1018,7 +1036,7 @@ function openWorkOrderPopup(ticString, idString) {
   }   
   //console.log(`url="${url}"`);
   // Define window features (size, scrollbars, etc.)
-  const windowFeatures = "width=600,height=600,scrollbars=yes,resizable=yes,left=10,top=10";
+  const windowFeatures = "width=700,height=600,scrollbars=yes,resizable=yes,left=100,top=100";
   // Open the new popup window
   window.open(url, '_blank', windowFeatures);
 }

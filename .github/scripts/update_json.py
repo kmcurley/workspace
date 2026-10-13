@@ -1,6 +1,6 @@
 import json
 import os
-
+#
 # Load pending tickets
 with open('pending-ticket.json', 'r') as f:
     new_tickets = json.load(f).get('new_tickets', [])

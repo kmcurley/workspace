@@ -28,8 +28,8 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add tic-id.json
-          git commit -m "Update tic-id.json with new ticket" || echo "No changes to commit"
+          git add csvviewer-tic-id.json
+          git commit -m "Update csvviewer-tic-id.json with new ticket" || echo "No changes to commit"
           git push
 
 

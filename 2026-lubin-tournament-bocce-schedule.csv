@@ -1,0 +1,17 @@
+Date,Time,Court 1,Court 2
+2026-10-29,08:00:00 AM,Game 1: Team 11 vs Team 04,Game 2: Team 16 vs Team 2
+2026-10-29,08:45:00 AM,Game 3: Team 9 vs Team 01,Game 4: Team 13 vs Team 6
+2026-10-29,09:30:00 AM,Game 5: Team 3 vs Team 15,Game 6: Team 8 vs Team 12
+2026-10-29,10:15:00 AM,Game 7: Team 5 vs Team 10,Game 8: Team 14 vs Team 7
+2026-11-05,08:00:00 AM,Game 9: Winner 1 vs Winner 2 — Winners bracket,Game 10: Winner 3 vs Winner 4 — Winners bracket
+2026-11-05,08:45:00 AM,Game 11: Winner 5 vs Winner 6 — Winners bracket,Game 12: Winner 7 vs Winner 8 — Winners bracket
+2026-11-05,09:30:00 AM,Game 13: Loser 1 vs Loser 2 — Losers bracket,Game 14: Loser 3 vs Loser 4 — Losers bracket
+2026-11-05,10:15:00 AM,Game 15: Loser 5 vs Loser 6 — Losers bracket,Game 16: Loser 7 vs Loser 8 — Losers bracket
+2026-11-12,08:00:00 AM,Game 17: Winner 9 vs Winner 10 — Winners bracket,Game 18: Winner 11 vs Winner 12 — Winners bracket
+2026-11-12,08:45:00 AM,Game 19: Loser 9 vs Winner 13 — Losers bracket,Game 20: Loser 10 vs Winner 14 — Losers bracket
+2026-11-12,09:30:00 AM,Game 21: Loser 11 vs Winner 15 — Losers bracket,Game 22: Loser 12 vs Winner 16 — Losers bracket
+2026-11-12,10:15:00 AM,Game 23: Loser 13 vs Loser 14 — Losers bracket,Game 24: Loser 15 vs Loser 16 — Losers bracket
+2026-11-19,08:00:00 AM,Game 25: Loser 17 vs Loser 18 — 3rd Place,Game 26: Loser 21 vs Winner 19 — Losers bracket
+2026-11-19,08:45:00 AM,Game 27: Loser 22 vs Winner 21 — Losers bracket,Game 28: Winner 20 vs Winner 22 — Losers bracket
+2026-11-19,09:30:00 AM,Game 29: Winner 23 vs Winner 24 — Losers bracket,Game 30: Loser 19 vs Loser 20 — Losers bracket
+2026-11-19,10:15:00 AM,Game 31: Winner 17 vs Winner 18 — Championship,Game 32: Loser 23 vs Loser 24 — Losers bracket

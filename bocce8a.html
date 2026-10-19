@@ -143,7 +143,8 @@
 
     <h1 style="display: flex; align-items: center; gap: 10px;">
 		<img src="avalon-bocce-icon-80x80.jpg" alt="Avalon Bocce Icon" style="height: 80px;">
-		2026 Summer Bocce Schedule and Standings
+		<span id="titleText">Bocce Schedule and Standings</span>
+</h1>
 	</h1>
 
 	<div id="bocce-standings-container"></div>
@@ -219,7 +220,12 @@
 	if (league) {
 		filePrefix=league;   // your function
 		console.log(`filePrefix=${filePrefix}`);
-	} 
+	}
+	const [year, seasonRaw] = filePrefix.split("-");
+    const season = seasonRaw.charAt(0).toUpperCase() + seasonRaw.slice(1);
+	document.getElementById("titleText").textContent =
+    `${year} ${season} Bocce Schedule and Standings`;
+
 	const tstyle = params.get("tstyle");  
 	console.log(`tstyle=${tstyle}`);
 	tableStyle="1";

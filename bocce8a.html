@@ -108,6 +108,8 @@
       width: 100%;
       height: 100%;
       background-color: #71716F;
+	  -webkit-print-color-adjust: exact;
+	  print-color-adjust: exact;
     }
     #bocce-standings-container .bold {
       font-weight: bold;
@@ -121,26 +123,40 @@
 	  padding: 0 5px;
 	}
 	.table-wrapper {
-  max-height: 300px; /* or whatever height you want */
-  overflow-y: auto;
-  border: 1px solid #ccc;
-}
+	  max-height: 300px; /* or whatever height you want */
+	  overflow-y: auto;
+	  border: 1px solid #ccc;
+	}
 
-.table-wrapper table {
-  width: 100%;
-  border-collapse: collapse;
-}
+	.table-wrapper table {
+	  width: 100%;
+	  border-collapse: collapse;
+	}
 
-.table-wrapper thead th {
-  position: sticky;
-  top: 0;
-  background-color: #f2f2f2; /* match your theme */
-  z-index: 1;
-}
-  @media print {
-    #controls { display: none; }
-    .team-box { width: 100%; margin-bottom: 20px; }
-  }
+	.table-wrapper thead th {
+	  position: sticky;
+	  top: 0;
+	  background-color: #f2f2f2; /* match your theme */
+	  z-index: 1;
+	}
+    @media print {
+      #controls { display: none; }
+      .team-box { width: 100%; margin-bottom: 20px; }
+    }
+	#downloadBtns {
+	  background: #f3f3f3;
+	  padding: 1px 1px;
+	  border-radius: 1px;
+	  border: 1px solid #ccc;
+	  display: inline-block;
+	}
+	#controlBtns {
+	  padding: 1px 1px;
+	  border-radius: 1px;
+	  border: 1px solid #ccc;
+	  display: inline-block;
+	}
+	
   </style>	
 </head>
 <body>
@@ -164,11 +180,17 @@
             <select id="teamFilter" onchange="filterSchedule()">
                 <option value="">Show All</option>
             </select>
+			&nbsp;&nbsp;
 			<div id="downloadBtns">
-			<label>&nbsp;&nbsp;Download calendar entries:</label>
-			&nbsp;&nbsp;<button id='downloadBtn' disabled>Team Schedule</button>&nbsp;&nbsp;
-            <button onclick="generateIcs('all')">All Games Schedule</button>&nbsp;&nbsp;
-			<button onclick="window.print()">Print PDF</button>			
+				<label>&nbsp;&nbsp;Download calendar entries:</label>&nbsp;
+				<button id='downloadBtn' disabled>Team Schedule</button>&nbsp;&nbsp;
+				<button onclick="generateIcs('all')">All Games Schedule</button>&nbsp;&nbsp;
+			</div>
+			&nbsp;&nbsp;
+			<div id="controlBtns">
+				<button onclick="window.print()">Print Schedule</button>&nbsp;&nbsp;
+				<!-- <button onclick="printSchedule()">Print Schedule</button>&nbsp;&nbsp; -->			
+				<button id="toggleControlsBtn">Hide Standings</button>			
 			</div>
         </div>
     </div>
@@ -291,9 +313,35 @@
 		]
 	  });
 	}
+	
+	document.getElementById("toggleControlsBtn").addEventListener("click", function () {
+		const section = document.getElementById("bocce-standings-container");
+		const btn = document.getElementById("toggleControlsBtn");
 
+		const isHidden = section.style.display === "none";
 
-    async function loadAndRender() {
+		if (isHidden) {
+			section.style.display = "block";
+			btn.textContent = "Hide Standings";
+		} else {
+			section.style.display = "none";
+			btn.textContent = "Show Standings";
+		}
+	});
+
+	function printSchedule() {
+		const section = document.getElementById("bocce-standings-container");
+		// Hide before printing
+		section.style.display = "none";
+		// Restore after printing
+		window.onafterprint = () => {
+			section.style.display = "block";
+		};
+		// Trigger print dialog
+		window.print();
+	}	 
+
+ async function loadAndRender() {
       let data;
 	  console.log(`Fetching ${fileStandings}`);
       try {
@@ -308,13 +356,29 @@
 	  console.log(`data.weeks.length=${data.weeks.length}`);
 	  if ( data.weeks.length < 1 ) {
 			console.log('Bypassing render of standings because data is unavailable.');
-	   } else {
-	    console.log('calling calculateTeamWins...');
-		const wins = calculateTeamWins(data.weeks);
-		console.log('calling renderTable...');
-		renderTable(wins, gamesPlayed, asOfDate, data.title, teamData.length);
+			// disable standings control
+			const btn = document.getElementById("toggleControlsBtn");
+			btn.disabled = true;
+		} else {
+			console.log('calling calculateTeamWins...');
+			const wins = calculateTeamWins(data.weeks);
+			console.log('calling renderTable...');
+			renderTable(wins, gamesPlayed, asOfDate, data.title, teamData.length);
+			// enable standings control
+			const btn = document.getElementById("toggleControlsBtn");
+			btn.disabled = false;
 	  }
     }
+	function disableToggleButton() {
+    const btn = document.getElementById("toggleControlsBtn");
+    btn.disabled = true;
+}
+
+function enableToggleButton() {
+    const btn = document.getElementById("toggleControlsBtn");
+    btn.disabled = false;
+}
+
 
     // Function to total wins and set globals
     function calculateTeamWins(weeks) {

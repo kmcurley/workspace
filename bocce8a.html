@@ -137,6 +137,10 @@
   background-color: #f2f2f2; /* match your theme */
   z-index: 1;
 }
+  @media print {
+    #controls { display: none; }
+    .team-box { width: 100%; margin-bottom: 20px; }
+  }
   </style>	
 </head>
 <body>
@@ -163,7 +167,8 @@
 			<div id="downloadBtns">
 			<label>&nbsp;&nbsp;Download calendar entries:</label>
 			&nbsp;&nbsp;<button id='downloadBtn' disabled>Team Schedule</button>&nbsp;&nbsp;
-            <button onclick="generateIcs('all')">All Games Schedule</button>
+            <button onclick="generateIcs('all')">All Games Schedule</button>&nbsp;&nbsp;
+			<button onclick="window.print()">Print PDF</button>			
 			</div>
         </div>
     </div>
@@ -677,18 +682,34 @@
 			filterSchedule();
             selectGame(null); 
         }
+		
+		function populateTeamFilter() {
+			const select = document.getElementById('teamFilter');
+			select.innerHTML = '<option value="">Show All</option>';
 
-        function populateTeamFilter() {
-            const select = document.getElementById('teamFilter');
-            select.innerHTML = '<option value="">Show All</option>';
-            const uniqueTeams = getUniqueTeams();
-            uniqueTeams.forEach(team => {
-                const option = document.createElement('option');
-                option.value = team;
-                option.textContent = team;
-                select.appendChild(option);
-            });
-        }
+			const uniqueTeams = getUniqueTeams();
+
+			// Filter only real team labels
+			const filtered = uniqueTeams.filter(team =>
+				team.includes("Team") && !team.includes(":")
+			);
+
+			// Sort numerically by the team number
+			filtered.sort((a, b) => {
+				const numA = parseInt(a.replace("Team", "").trim(), 10);
+				const numB = parseInt(b.replace("Team", "").trim(), 10);
+				return numA - numB;
+			});
+
+			// Populate dropdown
+			filtered.forEach(team => {
+				const option = document.createElement('option');
+				option.value = team;
+				option.textContent = team;
+				select.appendChild(option);
+			});
+		}
+		
 
         // ----------------------------------------------------------------------
         // ** PIVOT TABLE RENDERING LOGIC **

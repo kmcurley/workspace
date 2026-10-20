@@ -1,0 +1,148 @@
+{
+  "teams": [
+	  {
+		"team": 1,
+		"members": [
+		  "Renato Facio",
+		  "Debbie Hague",
+		  "Eli Kabrun (C)",
+		  "Josephine Pappalardi"
+		]
+	  },
+	  {
+		"team": 2,
+		"members": [
+		  "Kevin Curley (C)",
+		  "Eileen Rosen",
+		  "Bernice Ross",
+		  "Charlene Thompson"
+		]
+	  },
+	  {
+		"team": 3,
+		"members": [
+		  "David Argenzio",
+		  "Hank Greenberg",
+		  "Joan Hasluck (C)",
+		  "Lois Lubell"
+		]
+	  },
+	  {
+		"team": 4,
+		"members": [
+		  "Craig Goodwin",
+		  "Marion Israel",
+		  "Elise Levine",
+		  "Mark Rosen (C)"
+		]
+	  },
+	  {
+		"team": 5,
+		"members": [
+		  "Dena Goldberg",
+		  "Marc Lurie",
+		  "Annette Pergolizzi",
+		  "Ralph Susca (C)"
+		]
+	  },
+	  {
+		"team": 6,
+		"members": [
+		  "Lloyd Hasluck (C)",
+		  "Howard Saltzman",
+		  "Robert Steffen",
+		  "Gary Thompson"
+		]
+	  },
+	  {
+		"team": 7,
+		"members": [
+		  "Cindy Curley",
+		  "Glenn Haft (C)",
+		  "Burt Klein",
+		  "Elaine Leeds"
+		]
+	  },
+	  {
+		"team": 8,
+		"members": [
+		  "Ed Fishman (C)",
+		  "Nikki Grabisch",
+		  "Ron Holzman",
+		  "Maria Murray"
+		]
+	  },
+	  {
+		"team": 9,
+		"members": [
+		  "Jerry Bellsey",
+		  "Diana Diprima",
+		  "Abby Radwin (C)",
+		  "Judith Sigman"
+		]
+	  },
+	  {
+		"team": 10,
+		"members": [
+		  "Marianne Gardner",
+		  "Stewart Schram (C)",
+		  "Judy Selig",
+		  "Linda Simms"
+		]
+	  },
+	  {
+		"team": 11,
+		"members": [
+		  "Gerri Drago",
+		  "Leonard Freeman (C)",
+		  "Sherrie Schram",
+		  "Bob Wagner"
+		]
+	  },
+	  {
+		"team": 12,
+		"members": [
+		  "Peter Gardner (C)",
+		  "Ron Radwin",
+		  "Greg Smith",
+		  "Jerry Weisman"
+		]
+	  },
+	  {
+		"team": 13,
+		"members": [
+		  "Pam Holzman",
+		  "Eric Pappalardi",
+		  "Matt Tricarico (C)",
+		  "Marsha Wachs"
+		]
+	  },
+	  {
+		"team": 14,
+		"members": [
+		  "Steven Askinas (C)",
+		  "Roberta Gabler",
+		  "Stu Grodin",
+		  "Joan Madonna"
+		]
+	  },
+	  {
+		"team": 15,
+		"members": [
+		  "Marshall Goldstein",
+		  "Stephanie Klein",
+		  "Myra Slomiak (C)",
+		  "Jeffrey Wachs"
+		]
+	  },
+	  {
+		"team": 16,
+		"members": [
+		  "Stan Einhorn",
+		  "Salma Facio",
+		  "Carol Haft",
+		  "Stephanie Pessenda (C)"
+		]
+	  }
+	]
+}

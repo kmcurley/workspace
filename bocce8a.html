@@ -555,6 +555,10 @@ function enableToggleButton() {
 	    if (gameId !== null) {
 		  selectGame(gameId);
 		};
+		if (team1.includes(":") ) { 
+			const team1Array = team1.split(":");
+			team1 = team1Array[1].trim();
+		}	
 		let maxEntries = 0;
 		const tableBody = document.querySelector('#teamTable tbody');
 		tableBody.innerHTML = ' '; // Clear previous rows
@@ -576,40 +580,50 @@ function enableToggleButton() {
 				tableBody.appendChild(row);
 			};	
 		  } else {
-			const header = document.createElement('tr');
-			// column 1 header
-			const teamA = getTeamObject(team1, teamData)
-			const col1 = document.createElement('th');
-			col1.textContent = `Team ${teamA.team}`;
-			header.appendChild(col1);
-			// column 2 header
-			const teamB = getTeamObject(team2, teamData)
-			const col2 = document.createElement('th');
-			col2.textContent = `Team ${teamB.team}`;
-			header.appendChild(col2);
-			tableBody.appendChild(header);
-			
-			const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
-			for (t=0; t < maxEntries; t++) {
-				const row = document.createElement('tr');
+		    if ( team1.includes("Winner") || team1.includes("Loser") ) {
+				const header = document.createElement('tr');
+				// column 1 header
+				//const teamA = getTeamObject(team1, teamData)
+				const col1 = document.createElement('th');
+				col1.textContent = `Teams have not been decided for this game yet!`;
+				header.appendChild(col1);	
+				tableBody.appendChild(header);
+			  } else {
+				const header = document.createElement('tr');
+				// column 1 header
+				const teamA = getTeamObject(team1, teamData)
+				const col1 = document.createElement('th');
+				col1.textContent = `Team ${teamA.team}`;
+				header.appendChild(col1);
+				// column 2 header
+				const teamB = getTeamObject(team2, teamData)
+				const col2 = document.createElement('th');
+				col2.textContent = `Team ${teamB.team}`;
+				header.appendChild(col2);
+				tableBody.appendChild(header);
+				
+				const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
+				for (t=0; t < maxEntries; t++) {
+					const row = document.createElement('tr');
 
-				const column1 = document.createElement('td');
-				if (t+1 > teamA.members.length ) {
-					column1.textContent = " ";
-				  } else {
-					column1.textContent = teamA.members[t];
+					const column1 = document.createElement('td');
+					if (t+1 > teamA.members.length ) {
+						column1.textContent = " ";
+					  } else {
+						column1.textContent = teamA.members[t];
+					};
+					row.appendChild(column1);
+				
+					const column2 = document.createElement('td');
+					if (t+1 > teamB.members.length ) {
+						column2.textContent = " ";
+					  } else {
+						column2.textContent = teamB.members[t];
+					};
+					row.appendChild(column2);
+				
+					tableBody.appendChild(row);
 				};
-				row.appendChild(column1);
-			
-				const column2 = document.createElement('td');
-				if (t+1 > teamB.members.length ) {
-					column2.textContent = " ";
-				  } else {
-					column2.textContent = teamB.members[t];
-				};
-				row.appendChild(column2);
-			
-				tableBody.appendChild(row);
 			};
 		};
 

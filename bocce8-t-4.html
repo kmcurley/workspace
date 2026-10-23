@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="This page displays a league schedule with modal popups of team players. It read JSON and CSV files.">
+<link rel="icon" type="image/png" href="avalon-bocce-icon-80x80.jpg">
+<title>Avalon Estates Bocce Schedule</title>
+<style>
+
+	/* Basic Table Styling for readability */
+	body {
+		font-family: Arial, sans-serif;
+		padding: 20px;
+	}
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		margin-bottom: 15px;
+	}
+	/* Colors entire tbody blocks alternately original=#D3D3D3 */
+	table tbody:nth-child(odd) {
+	  background-color: #f2f2f2;
+	}
+
+	table tbody:nth-child(even) {
+	  background-color: #ffffff;
+	}
+	th, td {
+		border: 1px solid #ddd;
+		padding: 5px;
+		text-align: left;
+	}
+	th {
+		background-color: #D3D3D3;
+	}
+	/*
+	tr:hover {
+		background-color: #f5f5f5;
+	}
+	*/
+	.controls {
+		margin-bottom: 20px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 15px;
+		align-items: center;
+	}
+	.game-row {
+		cursor: pointer;
+	}
+	.selected-row {
+		background-color: #cceeff !important; /* Highlight selected row */
+	}
+	#scheduleContainer {
+		border-top: 2px solid #333;
+		padding-top: 15px;
+		margin-top: 15px;
+	}
+		
+	.modal {
+	  display: none;
+	  position: absolute;
+	  z-index: 1000;
+	  left: 0; top: 0;
+	  width: 100%; height: 100%;
+	  background-color: rgba(0,0,0,0.5);
+	  animation: fadeIn 0.3s ease;
+	}
+
+	@keyframes fadeIn {
+	  from { opacity: 0; }
+	  to { opacity: 1; }
+	}
+
+	.modal-content {
+	  background-color: #fff;
+	  padding: 1px;
+	  border-radius: 8px;
+	  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+	  position: absolute;
+	}
+
+    .close {
+      float: right;
+      font-size: 24px;
+      cursor: pointer;
+    }	
+	
+	#bocce-standings-container {
+	  all: unset;
+	  font-family: Arial, sans-serif; /* reapply only what you want */
+	}
+	#bocce-standings-container table {
+      border-collapse: collapse;
+      text-align: center;
+      margin: 0 auto;
+	}  
+    #bocce-standings-container td {
+      width: 40px;
+      height: 30px;
+      border: 1px solid #ccc;
+      padding-left: 5px;
+      padding-right: 5px;
+	  text-align: center;
+    }
+    #bocce-standings-container .gray-inner {
+      width: 100%;
+      height: 100%;
+      background-color: #71716F;
+    }
+    #bocce-standings-container .bold {
+      font-weight: bold;
+    }
+	#bocce-standings-container table {
+	  width: auto;
+	  border-collapse: collapse;
+	  margin: 0 auto;
+	}
+	#bocce-standings-container td {
+	  padding: 0 5px;
+	}
+	.table-wrapper {
+	  max-height: 300px; /* or whatever height you want */
+	  overflow-y: auto;
+	  border: 1px solid #ccc;
+	}
+
+	.table-wrapper table {
+	  width: 100%;
+	  border-collapse: collapse;
+	}
+
+	.table-wrapper thead th {
+	  position: sticky;
+	  top: 0;
+	  background-color: #f2f2f2; /* match your theme */
+	  z-index: 1;
+	}
+
+	body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
+	h1 {
+		text-align:center;
+		font-weight:bold;
+		font-size:26px;
+		margin-bottom:20px;
+	}
+	.date-section {
+		margin-bottom:30px;
+		padding:10px;
+		border-radius:6px;
+	}
+	.date-header {
+		font-weight:bold;
+		margin-bottom:8px;
+		text-align:center;
+		font-size:18px;
+	}
+	table {
+		width:100%;
+		border-collapse:collapse;
+	}  
+	th, td {
+		padding:6px 8px;
+		border-bottom:1px solid #ddd;
+		vertical-align:top;
+		text-align:center;
+	}
+	.team-line {
+		display:flex;
+		align-items:center;
+		gap:6px;
+		justify-content:center;
+	}
+	.team-name {
+		font-weight:bold;
+		white-space:pre; /* preserves padded spaces */
+	}
+	.winner-icon { color:green; font-weight:bold; }
+	.loser-icon { color:red; font-weight:bold; }
+	.neutral-icon { color:#aaa; font-weight:bold; }
+	.tag {
+		font-size:0.85rem;
+		color:#444;
+		margin-left:4px;
+	}
+	.result-line {
+		display:none; /* hidden per your request */
+	}
+	.hidden { display:none; }
+  
+	#schedule {
+	  max-height: 75vh;
+	  overflow-y: auto;
+	  background: #fff;
+	  border: 1px solid #ccc;
+	  border-radius: 6px;
+	}
+</style>	
+</head>
+<body>
+
+	<h1 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+		<img src="avalon-bocce-icon-80x80.jpg" alt="Avalon Bocce Icon" style="height: 80px;">
+		2026 Joel Lubin Bocce Tournament<br>Schedule and Standings
+	</h1>
+
+	<div id="bocce-standings-container"></div>
+	
+	<div id="schedule"></div>	
+	
+	<div id="nextRoundCsvBox" style="margin-top:20px; display:none;">
+    <label>Next Round CSV Rows:</label><br>
+    <textarea id="nextRoundCsv" rows="10" cols="80"></textarea><br><br>
+    <button id="copyCsvBtn" onclick="copyNextRoundCsv()">Copy to Clipboard</button>
+</div>
+
+		
+  <!-- Modal Container -->
+  <div id="teamModal" class="modal" style="display:none;">
+    <div class="modal-content" id="modalContent">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <table id="teamTable" rules="cols">
+        <tbody>
+          <!-- Rows will be injected here -->
+        </tbody>
+      </table>
+    </div>
+  </div>		
+
+<script>
+    // Global variables to hold the parsed data
+	game = '';
+    let games = [];
+	filteredGames = [];
+    let selectedGameId = null;
+    let gameCounter = 1; 
+	let teamData = [];
+	let currentDate = new Date().toISOString().split('T')[0];
+	let asOfDate = "";
+	let gamesPlayed = 0;	
+	let gamesWon = 0;
+	let isApp = false;
+	let appCall = "";
+	let filePrefix = "";
+	let jsonData = [];
+	
+	// --- Data structures ---
+	const scheduleByDate = {};
+	const gameResults = {};      // {date: [winningTeamNumbers]}
+	const gameRefs = {};         // {gameNumber: [{targetGame, side, refType}]}
+	const sideDomMap = {};       // {gameNumber: {A: element, B: element}}
+	const tagDomMap = {};        // {gameNumber: {A: tagElement, B: tagElement}}
+	const resultDomMap = {};     // {gameNumber: element}
+	const teamNameMap = {};         // convert future round placeholer "Loser X" or "Winner X" into "Team X" for roster
+	
+	console.log(`navigator.userAgent=${navigator.userAgent}`);
+	isApp = navigator.userAgent.includes("AvalonBocceApp");
+	if (isApp) {
+		//document.querySelectorAll(".ics-download").forEach(btn => {btn.style.display = "none";});
+		appCall = '(...)';
+	}
+	
+	// SET FILANAME VARIABLES
+	const params = new URLSearchParams(window.location.search);
+	console.log(`params=${params}`);
+	const league = params.get("league");
+	console.log(`league=${league}`);
+	//filePrefix="2026-summer";
+	filePrefix="2026-lubin-tournament";	
+	
+	if (league) {
+		filePrefix=league;   // your function
+		console.log(`filePrefix=${filePrefix}`);
+	} 
+	const tstyle = params.get("tstyle");  
+	console.log(`tstyle=${tstyle}`);
+	tableStyle="1";
+	if (tstyle) {
+		if (tstyle === "1" || tstyle === "2") {
+			tableStyle=tstyle;
+			console.log(`tableStyle=${tableStyle}`);
+		  } else {
+			tableStyle="1";
+			console.log(`Passed tstyle invalid: "${tstyle}".  tableStyle set to "1"`);
+		}	
+	} 
+
+	console.log(`currentDate=${currentDate}`);	
+		
+	// this routine opens a local CSV schedule file 
+	// when testing this code in a local browser
+	//const fileInput = document.getElementById('csvFile');
+	//	fileInput.addEventListener('click', () => {
+	//	fileInput.value = ''; // Reset before opening picker
+	//});	    
+	
+	// Create data to use with to display a table with bocce league results	
+	const fallbackData = {
+		"title": "2026 Joel Lubin Bocce Tournament Standing Unavailable",
+		"weeks": [
+					["2026-10-29", 1, 2, 3, 6, 8, 10, 11, 14],
+					["2026-11-05", 2, 6, 8, 10, 16, 13, 12, 7],
+					["2026-11-12", 6,10,16,13,3,7,9,5]
+		   ]
+	}
+	
+	// Dynamically create an array of 16 teams with 2 members each
+	// for testing purposes when there is no team JSON file
+	const teams = [];
+	for (let i = 1; i <= 16; i++) {
+		teams.push({
+		team: i,
+		members: [
+		`Member 1 (C)`,  // Captain
+		`Member 2`       // Second member
+		]
+	  });
+	}
+	
+	//const filePrefix="2026-lubin-tournament";
+	const csvUrl = `${filePrefix}-bocce-schedule.csv`;
+	console.log(`csvUrl=${csvUrl}`);
+	const jsonUrl = `${filePrefix}-bocce-standings.json`;
+	console.log(`jsonUrl=${jsonUrl}`);
+	const teamsUrl = `${filePrefix}-bocce-teams.json`;
+	console.log(`teamsUrl=${teamsUrl}`);
+
+	// --- Load CSV and JSON ---
+	Promise.all([
+	  fetch(csvUrl + "?ts=" + Date.now()).then(r => r.text()),
+	  fetch(jsonUrl + "?ts=" + Date.now()).then(r => r.json()),
+	  fetch(teamsUrl + "?ts=" + Date.now()).then(r => r.json()).catch(() => ({teams:[]}))
+	]).then(([csvText, jsonData, teamsData]) => {
+	  //console.log(`teamsData.title=${teamsData.title}`);
+	  //console.log(`jsonData.weeks=${jsonData.weeks}`);
+	  //console.log(`jsonData.title=${jsonData.title}`);
+	  //console.log('calling loadTeams...');
+	  teamData = teamsData.teams;
+	  console.log('calling calculateTeamWins...');
+	  if (jsonData.weeks.length > 0 ) {
+		  const wins = calculateTeamWins(jsonData.weeks);
+		  console.log(`wins=${wins}`);
+		  console.log('calling renderTable...');
+		  renderTable(wins, gamesPlayed, asOfDate, jsonData.title, teamData.length);
+		} else {
+		  console.log('No data for "weeks" in the JSON file.');
+	  }	  
+	  parseCsv(csvText);
+	  parseJsonResults(jsonData);
+	  renderSchedule();
+	  applySavedResults();
+	});
+
+	//----------------------------------------------------------------------
+	// ------------- START of functions not used in this code---------------
+	//----------------------------------------------------------------------
+	//
+	
+	//fileStandings=`${filePrefix}-bocce-standings.json`;
+	//console.log(`fileStandings=${fileStandings}`);
+	//fileSchedule=`${filePrefix}-bocce-schedule.csv`;
+	//console.log(`fileSchedule=${fileSchedule}`);
+	//fileTeams=`${filePrefix}-bocce-teams.json`;
+	//console.log(`fileTeams=${fileTeams}`);
+	
+    async function loadAndRender() {
+      //let data;
+	  console.log(`Fetching ${fileStandings}`);
+      try {
+        const response = await fetch(fileStandings, { cache: 'reload' });
+        if (!response.ok) throw new Error("Fetch failed");
+        jsonData = await response.json();
+      } catch (error) {
+        console.warn("Using fallback jsonData due to fetch error:", error);
+        jsonData = fallbackData;
+      }
+	  console.log(`teamData.length=${teamData.length}`);
+	  console.log(`jsonData.weeks.length=${jsonData.weeks.length}`);
+	  if ( jsonData.weeks.length < 1 ) {
+			console.log('Bypassing render of standings because data is unavailable.');
+	   } else {
+	    console.log('calling calculateTeamWins...');
+		const wins = calculateTeamWins(jsonData.weeks);
+		console.log('calling renderTable...');
+		renderTable(wins, gamesPlayed, asOfDate, jsonData.title, teamData.length);
+	  }
+    }
+	
+    async function loadTeams() {
+	  console.log(`Fetching ${fileTeams}`);
+      try {
+        const response = await fetch(fileTeams, { cache: 'reload' });
+        const data = await response.json();
+        teamData = data.teams;
+        //renderTeamList();
+      } catch (err) {
+        console.error('Failed to load team data:', err);
+		teamData = teams;
+        //renderTeamList();
+      }
+    }
+	
+	function renderTeamList() {
+      const container = document.getElementById('teamList');
+      teamData.forEach(team => {
+        const div = document.createElement('div');
+        div.className = 'team-line';
+        div.textContent = `Team ${team.team}`;
+        div.onclick = () => showTeamAt(event,`Team ${team.team}`, "Team 1");
+        container.appendChild(div);
+      });
+    }	
+	//----------------------------------------------------------------------
+	// -------------- END of functions not used in this code----------------	
+	//----------------------------------------------------------------------	
+
+    // Function to total wins and set globals
+    function calculateTeamWins(weeks) {
+      const wins = Array(16).fill(0);
+      //console.log(`calculateTeamWins: weeks=${weeks}`);
+      // Loop through each week
+      weeks.forEach(week => {
+        for (let i = 1; i < week.length; i++) {
+          const teamNumber = week[i];
+          if (teamNumber >= 1 && teamNumber <= 16) {
+            wins[teamNumber - 1]++;
+          }
+        }
+      });
+
+      // Set global gamesPlayed
+      gamesPlayed = weeks.length;
+
+      // Get last week's date (yyyymmdd format at position 0)
+      const lastWeekDate = weeks[weeks.length - 1][0]; // e.g. "2025-12-15"
+      const yyyy = lastWeekDate.substring(0, 4);
+      const mm   = lastWeekDate.substring(5, 7);
+      const dd   = lastWeekDate.substring(8, 10);
+
+      // Set global asOfDate in mm/dd/yyyy format
+      asOfDate = mm + "/" + dd + "/" + yyyy;
+
+      // Calculate total games won (sum of wins array)
+      gamesWon = wins.reduce((sum, val) => sum + val, 0);
+
+      // Display info message
+      console.info("Games Played:", gamesPlayed, 
+                   "Games Won:", gamesWon, 
+                   "As Of:", asOfDate, 
+                   "Wins:", wins);
+
+      return wins;
+    }
+
+    function renderTable(wins, gamesPlayed, asOfDate, title, numberOfTeams) {
+	  console.log('renderTable: starting...');
+	  console.log(`wins=${wins}`);
+	  console.log(`gamesPlayed=${gamesPlayed}`);
+	  console.log(`asOfDate=${asOfDate}`);
+	  console.log(`title=${title}`);
+	  console.log(`numberOfTeams=${numberOfTeams}`);
+      const numTeams = numberOfTeams;  // wins.length;
+      const table = document.createElement('table');
+
+      // Header row
+      const titleRow = document.createElement('tr');
+      titleRow.appendChild(createCell('Weeks Played', true));
+      const titleCell = document.createElement('td');
+      titleCell.colSpan = numTeams;
+      titleCell.className = 'bold';
+      //titleCell.textContent = `${title} ${asOfDate}.  Games played so far: ${gamesWon}`;
+	  titleCell.textContent = `${title} ${asOfDate} ${appCall}`;
+      titleRow.appendChild(titleCell);
+      table.appendChild(titleRow);
+
+      // Bar rows
+      for (let level = gamesPlayed; level >= 1; level--) {
+        const row = document.createElement('tr');
+        row.appendChild(createCell(level.toString()));
+        for (let i = 0; i < numTeams; i++) {
+          const cell = document.createElement('td');
+          if (wins[i] >= level) {
+            const bar = document.createElement('div');
+            bar.className = 'gray-inner';
+            cell.appendChild(bar);
+          }
+          row.appendChild(cell);
+        }
+        table.appendChild(row);
+      }
+
+      // Team row
+      const teamRow = document.createElement('tr');
+      teamRow.appendChild(createCell('Teams', true));
+      for (let i = 1; i <= numTeams; i++) {
+        //teamRow.appendChild(createCell(i.toString()));
+		const cell = document.createElement('td');
+		cell.textContent = i.toString();
+		cell.onclick = () => showTeamAt(event, i.toString(), "0", null);
+		teamRow.appendChild(cell);
+      }
+      table.appendChild(teamRow);
+	  // Footer row
+      const footerRow = document.createElement('tr');
+      footerRow.appendChild(createCell(' '));
+      const footerCell = document.createElement('td');
+      footerCell.colSpan = numTeams;
+      footerCell.className = 'bold';
+      footerCell.textContent = `Click on the team number to see the team roster.`;
+      footerRow.appendChild(footerCell);
+      table.appendChild(footerRow);
+
+      const container = document.getElementById('bocce-standings-container');
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    function createCell(content, isBold = false) {
+      const cell = document.createElement('td');
+      cell.textContent = content;
+      if (isBold) cell.className = 'bold';
+      return cell;
+    }
+
+    function getTeamObject(teamLabel, teams) {
+		// Extract the number from "Team x"
+		const teamNumber = parseInt(teamLabel.replace('Team ', ''), 10);
+		// Find the matching team object
+		return teams.find(t => t.team === teamNumber);
+	}
+
+    function closeModal() {
+      document.getElementById('teamModal').style.display = 'none';
+    }
+	
+	// Close modal when clicking outside the modal content
+	window.addEventListener('click', function(event) {
+		const modal = document.getElementById('teamModal');
+		const content = document.querySelector('.modal-content');
+		if (event.target === modal) {
+		modal.style.display = 'none';
+		}
+	});
+	
+	function positionModal(event, modalContent) {
+		const padding = 10;
+		const modalWidth = modalContent.offsetWidth || 300;
+		const modalHeight = modalContent.offsetHeight || 200;
+
+		// Use pageX/Y for document-relative positioning
+		let x = event.pageX + padding;
+		let y = event.pageY + padding;
+	
+		// Clamp to viewport bounds
+		if (x + modalWidth > window.innerWidth + window.scrollX) {
+			x = window.innerWidth + window.scrollX - modalWidth - padding;
+		}
+		if (y + modalHeight > window.innerHeight + window.scrollY) {
+			y = window.innerHeight + window.scrollY - modalHeight - padding;
+		}
+
+		modalContent.style.position = 'absolute';
+		modalContent.style.left = `${x}px`;
+		modalContent.style.top = `${y}px`;
+		modalContent.style.zIndex = 1000;
+	}
+	
+	function showTeamAt(event, team1, team2, gameId) {
+	    //if (gameId !== null) {
+		//  selectGame(gameId);
+		//};
+		//console.log(`team1="${team1}"  team2="${team2}"`);
+		if (team1.includes("Winner") || team1.includes("Loser") ) { 
+			team1 = teamNameMap[`${team1}`];
+		}
+		if (team2.includes("Winner") || team2.includes("Loser") ) { 
+			team2 = teamNameMap[`${team2}`];
+		}		
+		console.log(`team1="${team1}"  team2="${team2}"`);
+		let maxEntries = 0;
+		const tableBody = document.querySelector('#teamTable tbody');
+		tableBody.innerHTML = ' '; // Clear previous rows
+		if (team2 === "0" ) {
+			let header = document.createElement('tr');
+			// column 1 header
+			const teamA = getTeamObject(team1, teamData)
+			let col1 = document.createElement('th');
+			col1.textContent = `Team ${teamA.team}`;
+			header.appendChild(col1);
+			tableBody.appendChild(header);  
+			
+			const maxEntries = teamA.members.length; 
+			for (t=0; t < maxEntries; t++) {
+				const row = document.createElement('tr');
+				const column1 = document.createElement('td');
+				column1.textContent = teamA.members[t];	
+				row.appendChild(column1);
+				tableBody.appendChild(row);
+			};	
+		  } else {
+			const header = document.createElement('tr');
+			// column 1 header
+			const teamA = getTeamObject(team1, teamData)
+			const col1 = document.createElement('th');
+			col1.textContent = `Team ${teamA.team}`;
+			header.appendChild(col1);
+			// column 2 header
+			const teamB = getTeamObject(team2, teamData)
+			const col2 = document.createElement('th');
+			col2.textContent = `Team ${teamB.team}`;
+			header.appendChild(col2);
+			tableBody.appendChild(header);
+			
+			const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
+			for (t=0; t < maxEntries; t++) {
+				const row = document.createElement('tr');
+
+				const column1 = document.createElement('td');
+				if (t+1 > teamA.members.length ) {
+					column1.textContent = " ";
+				  } else {
+					column1.textContent = teamA.members[t];
+				};
+				row.appendChild(column1);
+			
+				const column2 = document.createElement('td');
+				if (t+1 > teamB.members.length ) {
+					column2.textContent = " ";
+				  } else {
+					column2.textContent = teamB.members[t];
+				};
+				row.appendChild(column2);
+			
+				tableBody.appendChild(row);
+			};
+		};
+
+		document.getElementById('teamModal').style.display = 'block';
+		
+		// Position and show
+		const content = document.getElementById('modalContent');
+		positionModal(event, content);
+		//modal.style.display = 'block';
+	}	
+
+
+	//
+	//  Code to create tournament web page - Beginning of section
+	// 
+
+	// --- Parse CSV ---
+	function parseCsv(text) {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+	  console.log(`parseCvs: parsing CSV data...`);
+	  const lines = text.trim().split(/\r?\n/);
+	  for (let i = 1; i < lines.length; i++) {
+		const cols = lines[i].split(",");
+		const date = cols[0];
+		const time = cols[1];
+		const court1 = parseGameText(cols[2]);
+		const court2 = parseGameText(cols[3]);
+
+		if (!scheduleByDate[date]) scheduleByDate[date] = [];
+		scheduleByDate[date].push({
+		  date,
+		  time,
+		  court1,
+		  court2
+		});
+	  }
+	}
+
+	// Parse "Game 1: Team 11 vs Team 4"
+	function parseGameText(text) {
+	  let main = text.split("—")[0].split("�")[0].trim();
+	  const m = main.match(/^Game\s+(\d+):\s*(.+)\s+vs\s+(.+)$/i);
+	  if (!m) return { raw:text, gameNumber:null };
+
+	  return {
+		raw:text,
+		gameNumber:parseInt(m[1],10),
+		sideA:parseSideRef(m[2].trim()),
+		sideB:parseSideRef(m[3].trim())
+	  };
+	}
+
+	function parseSideRef(str) {
+	  let m = str.match(/^Winner\s+(\d+)$/i);
+	  if (m) return { type:"winner", game:parseInt(m[1],10) };
+	  m = str.match(/^Loser\s+(\d+)$/i);
+	  if (m) return { type:"loser", game:parseInt(m[1],10) };
+	  return { type:"team", name:str };
+	}
+
+	// --- Parse JSON results ---
+	function parseJsonResults(json) {
+	  console.log(`parseJsonResults: parsing JSON standings data...`);
+	  json.weeks.forEach(week => {
+		const date = week[0];
+		const winners = week.slice(1);
+		console.log(`parseJsonResults: date=${date}  winners=${winners}`)
+		gameResults[date] = winners;
+	  });
+	}
+
+	// --- Render schedule ---
+	function renderSchedule() {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+	  const container = document.getElementById("schedule");
+	  container.innerHTML = "";
+
+	  const dates = Object.keys(scheduleByDate).sort();
+	  dates.forEach((date, idx) => {
+		const section = document.createElement("div");
+		section.className = "date-section";
+		section.style.backgroundColor = (idx % 2 === 0) ? "#fff" : "#eee";
+
+		const header = document.createElement("div");
+		header.className = "date-header";
+		header.textContent = `${formatDate(date)} — Round ${idx+1}`;
+		section.appendChild(header);
+
+		const table = document.createElement("table");
+		const thead = document.createElement("thead");
+		thead.innerHTML = `
+		  <tr>
+			<th>Time</th>
+			<th>Game</th>
+			<th>Court 1</th>
+			<th>Game</th>
+			<th>Court 2</th>
+		  </tr>`;
+		table.appendChild(thead);
+
+		const tbody = document.createElement("tbody");
+		tbody.dataset.date = date;
+
+		scheduleByDate[date].forEach(row => {
+		  const tr = document.createElement("tr");
+
+		  const tdTime = document.createElement("td");
+		  tdTime.textContent = row.time;
+		  tr.appendChild(tdTime);
+
+		  const tdGame1 = document.createElement("td");
+		  tdGame1.textContent = row.court1.gameNumber ? `Game ${row.court1.gameNumber}` : "";
+		  tr.appendChild(tdGame1);
+
+		  const tdCourt1 = document.createElement("td");
+		  tdCourt1.appendChild(renderGameCell(row.court1, date));
+		  tr.appendChild(tdCourt1);
+
+		  const tdGame2 = document.createElement("td");
+		  tdGame2.textContent = row.court2.gameNumber ? `Game ${row.court2.gameNumber}` : "";
+		  tr.appendChild(tdGame2);
+
+		  const tdCourt2 = document.createElement("td");
+		  tdCourt2.appendChild(renderGameCell(row.court2, date));
+		  tr.appendChild(tdCourt2);
+
+		  tbody.appendChild(tr);
+		});
+
+		if (idx > 0) tbody.classList.add("hidden");
+
+		table.appendChild(tbody);
+		section.appendChild(table);
+		container.appendChild(section);
+	  });
+	}
+
+	function formatDateold(dateStr) {
+	  console.log(`formatDate: dateStr=${dateStr}`);
+	  return new Date(dateStr).toLocaleDateString("en-US", {
+		weekday:"long", month:"long", day:"numeric", year:"numeric"
+	  });
+	}
+
+	function formatDate(dateStr) {
+	  const [year, month, day] = dateStr.split("-").map(Number);
+	  const d = new Date(year, month - 1, day); // local date, no timezone shift
+
+	  return d.toLocaleDateString("en-US", {
+		weekday: "long",
+		month: "long",
+		day: "numeric",
+		year: "numeric"
+	  });
+	}
+
+	// --- Render game cell ---
+	function renderGameCell(gameObj, date) {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+	  //console.log('renderGameCell: Starting...');
+	  const wrapper = document.createElement("div");
+
+	  if (!gameObj.gameNumber) {
+		wrapper.textContent = gameObj.raw;
+		return wrapper;
+	  }
+	  
+	  // Extract numeric team values	
+	  const teamA_num = sideLabel(gameObj.sideA);
+	  const teamB_num = sideLabel(gameObj.sideB);
+
+	  const g = gameObj.gameNumber;
+	  sideDomMap[g] = {};
+	  tagDomMap[g] = {};
+
+	  const lineA = document.createElement("div");
+	  lineA.className = "team-line";
+	  const iconA = document.createElement("span");
+	  iconA.className = "neutral-icon";
+	  iconA.textContent = "—";
+	  const nameA = document.createElement("span");
+	  nameA.className = "team-name";
+	  nameA.textContent = padTeamNumber(sideLabel(gameObj.sideA));
+	  //nameA.onclick = (event) => showTeamAt(event, teamA_num, teamB_num, "");
+	  const tagA = document.createElement("span");
+	  tagA.className = "tag";
+	  lineA.appendChild(iconA);
+	  lineA.appendChild(nameA);
+	  lineA.appendChild(tagA);
+
+	  sideDomMap[g].A = nameA;
+	  tagDomMap[g].A = tagA;
+	  tagDomMap[g].A.icon = iconA;
+
+	  const lineB = document.createElement("div");
+	  lineB.className = "team-line";
+	  const iconB = document.createElement("span");
+	  iconB.className = "neutral-icon";
+	  iconB.textContent = "—";
+	  const nameB = document.createElement("span");
+	  nameB.className = "team-name";
+	  nameB.textContent = padTeamNumber(sideLabel(gameObj.sideB));
+	  //nameB.onclick = (event) => showTeamAt(event, teamA_num, teamB_num, "");
+	  const tagB = document.createElement("span");
+	  tagB.className = "tag";
+	  lineB.appendChild(iconB);
+	  lineB.appendChild(nameB);
+	  lineB.appendChild(tagB);
+
+	  sideDomMap[g].B = nameB;
+	  tagDomMap[g].B = tagB;
+	  tagDomMap[g].B.icon = iconB;
+	  
+	  // Create combined roster line (lineC)
+	  const lineC = document.createElement("div");
+	  lineC.style.fontWeight = "normal";
+	  lineC.style.fontSize = "0.85rem";
+	  lineC.style.cursor = "pointer";
+	  lineC.style.color = "#444";
+	  lineC.style.marginTop = "4px";
+	  lineC.textContent = "(Click for team roster)";
+	  lineC.onclick = (event) => showTeamAt(event, teamA_num, teamB_num, "");
+
+	  const resultLine = document.createElement("div");
+	  resultLine.className = "result-line";
+	  resultLine.innerHTML = `
+		<span>Winner: —</span>
+		<span class="result-colon">:</span>
+		<span>Loser: —</span>
+	  `;
+	  resultDomMap[g] = resultLine;
+
+	  wrapper.appendChild(lineA);
+	  wrapper.appendChild(lineB);
+	  wrapper.appendChild(lineC); 
+	  wrapper.appendChild(resultLine);
+
+	  registerRefs(gameObj);
+	  return wrapper;
+	}
+
+	function padTeamNumber(name) {
+	  return name.replace(/Team (\d+)/, (_, num) => {
+		//return num.length === 1 ? `Team  ${num}` : `Team ${num}`;
+		return name.replace(/Team (\d+)/, (_, num) => `Team ${num.padStart(2, "0")}`);
+
+	  });
+	}
+
+	function sideLabel(side) {
+	  if (side.type === "team") return side.name;
+	  if (side.type === "winner") return "Winner " + side.game;
+	  if (side.type === "loser") return "Loser " + side.game;
+	  return "";
+	}
+
+	function registerRefs(gameObj) {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+	  const g = gameObj.gameNumber;
+	  ["sideA","sideB"].forEach(sideKey => {
+		const side = gameObj[sideKey];
+		if (side.type === "winner" || side.type === "loser") {
+		  const src = side.game;
+		  if (!gameRefs[src]) gameRefs[src] = [];
+		  gameRefs[src].push({
+			targetGame:g,
+			side:sideKey === "sideA" ? "A" : "B",
+			refType:side.type
+		  });
+		  //console.log(`src=${src}`);
+		  //console.log(gameRefs[src]);
+		}
+	  });
+	}
+
+	// --- Apply saved JSON results ---
+	function applySavedResults() {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+	
+	  const dates = Object.keys(scheduleByDate).sort();
+	  //console.log(`applySavedResults: dates=${dates}`);
+	  dates.forEach(date => {
+		//console.log(`applySavedResults: date=${date}`);
+		const winners = gameResults[date];
+		//console.log(`applySavedResults: winners=${winners}`);
+		if (!winners) return;
+
+		const rows = scheduleByDate[date];
+
+		rows.forEach((row, idx) => {
+		  const g1 = row.court1.gameNumber;
+		  const g2 = row.court2.gameNumber;
+
+		  if (g1 && winners[idx] !== undefined) {
+			applyWinnerLoser(g1, winners[idx], winners);
+		  }
+		  if (g2 && winners[idx+1] !== undefined) {
+			applyWinnerLoser(g2, winners[idx+1], winners);
+		  }
+		});
+
+		revealNextRound(date);
+	  });
+	}
+
+	function applyWinnerLoser(gameNumber, winningTeamNumber, winners) {	
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`);   
+	  
+	  const A = sideDomMap[gameNumber].A.textContent.trim();
+	  const B = sideDomMap[gameNumber].B.textContent.trim();
+
+	  // Extract numeric team number from "Team 02"
+	  const aNum = parseInt(A.replace("Team ", ""), 10);
+	  const bNum = parseInt(B.replace("Team ", ""), 10);
+
+	  // Decide winner based on whether the team number is in the winners array
+	  const winner = winners.includes(aNum) ? A : B;
+	  const loser  = winners.includes(aNum) ? B : A;  
+
+	  const iconA = tagDomMap[gameNumber].A.icon;
+	  const iconB = tagDomMap[gameNumber].B.icon;
+
+	  if (winner === A) {
+		iconA.textContent = "✔";
+		iconA.className = "winner-icon";
+		iconB.textContent = "✖";
+		iconB.className = "loser-icon";
+		tagDomMap[gameNumber].A.textContent = "Won";
+		tagDomMap[gameNumber].B.textContent = "Lost";
+	  } else {
+		iconB.textContent = "✔";
+		iconB.className = "winner-icon";
+		iconA.textContent = "✖";
+		iconA.className = "loser-icon";
+		tagDomMap[gameNumber].B.textContent = "Won";
+		tagDomMap[gameNumber].A.textContent = "Lost";
+	  }
+	  teamNameMap[`Winner ${gameNumber}`] = winner;
+	  teamNameMap[`Loser ${gameNumber}`] = loser;
+	  updateDependentGames(gameNumber, winner, loser);
+	}
+
+	function updateDependentGames(srcGame, winner, loser) {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      //console.log(`Starting function: ${name}`); 
+	  //console.log(`srcGame=${srcGame}  winner=${winner}  loser=${loser}`);
+	  const refs = gameRefs[srcGame];
+	  if (!refs) return;
+
+	  refs.forEach(ref => {
+		const dom = sideDomMap[ref.targetGame][ref.side];
+		const tag = tagDomMap[ref.targetGame][ref.side];
+		const icon = tag.icon;
+
+		if (ref.refType === "winner") {
+		  dom.textContent = padTeamNumber(winner);
+		  icon.textContent = "—";
+		  icon.className = "neutral-icon";
+		  tag.textContent = "(w g" + srcGame + ")";
+		} else {
+		  dom.textContent = padTeamNumber(loser);
+		  icon.textContent = "—";
+		  icon.className = "neutral-icon";
+		  tag.textContent = "(l g" + srcGame + ")";
+		}
+	  });
+	}
+	
+	function urlHasCsvFlag() {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+		const params = new URLSearchParams(window.location.search);
+		return params.get("csv") === "yes";
+	}
+	
+
+	function revealNextRound(date) {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+	  const dates = Object.keys(scheduleByDate).sort();
+	  const idx = dates.indexOf(date);
+	  const nextDate = dates[idx+1];
+	  if (!nextDate) return;
+
+	  document.querySelector(`tbody[data-date="${nextDate}"]`).classList.remove("hidden");
+	}
+	
+	function generateNextRoundCsv(nextRoundGames, nextRoundDate, nextRoundTime) {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+		// nextRoundGames = array of objects:
+		// { gameNumber: 9, winnerOf: [1,2] } meaning Game 9 = Winner Game 1 vs Winner Game 2
+
+		let rows = [];
+
+		nextRoundGames.forEach(g => {
+			const teamA = winners[g.winnerOf[0]] || `Winner Game ${g.winnerOf[0]}`;
+			const teamB = winners[g.winnerOf[1]] || `Winner Game ${g.winnerOf[1]}`;
+
+			const row = `${nextRoundDate},${nextRoundTime},Game ${g.gameNumber}: ${teamA} vs ${teamB}`;
+			rows.push(row);
+		});
+
+		document.getElementById("nextRoundCsv").value = rows.join("\n");
+	}
+	
+	
+	function copyNextRoundCsv() {
+	  const stack = new Error().stack.split("\n")[1];
+      const name = stack.match(/at (\S+)/)[1];
+      console.log(`Starting function: ${name}`); 	
+		const textarea = document.getElementById("nextRoundCsv");
+
+		textarea.select();
+		textarea.setSelectionRange(0, textarea.value.length); // mobile support
+
+		navigator.clipboard.writeText(textarea.value)
+			.then(() => {
+				// Optional: brief visual feedback
+				const btn = document.getElementById("copyCsvBtn");
+				const oldText = btn.textContent;
+				btn.textContent = "Copied!";
+				setTimeout(() => btn.textContent = oldText, 1200);
+			})
+			.catch(err => {
+				alert("Copy failed — your browser may not support clipboard API.");
+			});
+	}
+
+
+</script>
+
+</body>
+</html>

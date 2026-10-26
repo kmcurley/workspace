@@ -1,0 +1,24 @@
+{
+  "__comment": "weeks data looks like this: [date in quotes,winning team,winning team,etc...]  ",
+  "title": "2026 Winter Bocce League Team Standings as of",
+  "weeks": [ 
+			["20261029",1,3,4,6,8,10,14,16],
+			["20261203",6,3,13,5,8,15,7,1],
+			["20261105",6,16,8,14,11,2,15,5]
+	       ],
+  "weeks-sample": [ 
+	  		["20261029",1,3,4,6,8,10,14,16]
+	       ]     
+}	  
+
+
+
+
+
+
+
+
+
+
+
+

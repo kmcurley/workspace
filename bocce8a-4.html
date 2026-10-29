@@ -658,7 +658,7 @@ function enableToggleButton() {
 			console.log(`url(${url})`);
 			try {
 				const res = await fetch(url, { cache: 'reload' });
-				if(!res.ok) throw new Error('fetch failed ' + res.status);
+				if(!res.ok) { throw new Error('fetch failed ' + res.status) };
 				const text = await res.text();
 				inputContainer.disabled = true;
 				parseCSV(text);

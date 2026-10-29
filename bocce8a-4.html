@@ -856,10 +856,12 @@ function enableToggleButton() {
 					winnerLoserTab[`Winner ${gameNum}`] = newTeamA;
 					winnerLoserTab[`Loser ${gameNum}`] = newTeamB;
 					html = `<strong>${gameNumView}</strong><span class="circleTeam">${newTeamA}</span>vs ${newTeamB}`;
-				  } else {	
+				  } else if (week.slice(1).includes(teamBNum)) {	
 					winnerLoserTab[`Loser ${gameNum}`] = newTeamA;
 					winnerLoserTab[`Winner ${gameNum}`] = newTeamB;
 					html = `<strong>${gameNumView}</strong>${newTeamA} vs <span class="circleTeam">${newTeamB}</span>`;
+				  } else {
+					html = `<strong>${gameNumView}</strong>${newTeamA} vs ${newTeamB}`;
 				}
 			}
 		if ( "1" === "2" ) {
@@ -988,7 +990,7 @@ function enableToggleButton() {
 				`;
 				
 				uniqueDates.forEach(date => {
-					tableHTML += `<tbody><tr><td rowspan="2" style="text-align: center;">${date}</td>`;
+					tableHTML += `<tbody><tr><td rowspan="4" style="text-align: center;">${date}</td>`;
 					
 					uniqueTime24.forEach(time24 => {
 						const key = `${date}-${time24}`;
@@ -1002,8 +1004,8 @@ function enableToggleButton() {
 									data-game-id="${game.id}" 
 									onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
 									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
-									<strong>${game.court}</strong><br>
-									${game.teamA} vs ${game.teamB}
+									<!--<strong>${game.court}</strong><br>-->
+									${formatTeamName(game.teamA, game.teamB, date)}
 									<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
 								</div>
 								</td>

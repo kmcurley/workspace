@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="This page provides a dynamic team viewer with modal popups and interactive roster display. It read JSON and CSV files.">
+	<link rel="icon" type="image/png" href="avalon-bocce-icon-80x80.jpg">
+    <title>Avalon Estates Bocce Schedule</title>
+    <style>
+
+        /* Basic Table Styling for readability */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+		/* Colors entire tbody blocks alternately original=#D3D3D3 */
+		table tbody:nth-child(odd) {
+		  background-color: #f2f2f2;
+		}
+
+		table tbody:nth-child(even) {
+		  background-color: #ffffff;
+		}
+        th, td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: left;
+        }
+        th {
+            background-color: #D3D3D3;
+			text-align: center;
+        }
+		/*
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+		*/
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .game-row {
+            cursor: pointer;
+        }
+        .selected-row {
+            background-color: #cceeff !important; /* Highlight selected row */
+        }
+        #scheduleContainer {
+            border-top: 2px solid #333;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+		
+		.modal {
+		  display: none;
+		  position: absolute;
+		  z-index: 1000;
+		  left: 0; top: 0;
+		  width: 100%; height: 100%;
+		  animation: fadeIn 0.3s ease;
+		}
+
+		@keyframes fadeIn {
+		  from { opacity: 0; }
+		  to { opacity: 1; }
+		}
+
+		.modal-content {
+		  background-color: #fff;
+		  padding: 1px;
+		  border-radius: 8px;
+		  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+		  position: absolute;
+		}
+
+		.close {
+		  float: right;
+		  font-size: 24px;
+		  cursor: pointer;
+		}	
+		
+		#bocce-standings-container {
+		  all: unset;
+		  font-family: Arial, sans-serif; /* reapply only what you want */
+		}
+		#bocce-standings-container table {
+		  border-collapse: collapse;
+		  text-align: center;
+		  margin: 0 auto;
+		}  
+		#bocce-standings-container td {
+		  width: 40px;
+		  height: 30px;
+		  border: 1px solid #ccc;
+		  padding-left: 5px;
+		  padding-right: 5px;
+		  text-align: center;
+		}
+		#bocce-standings-container .gray-inner {
+		  width: 100%;
+		  height: 100%;
+		  background-color: #71716F;
+		  -webkit-print-color-adjust: exact;
+		  print-color-adjust: exact;
+		}
+		#bocce-standings-container .bold {
+		  font-weight: bold;
+		}
+		#bocce-standings-container table {
+		  width: auto;
+		  border-collapse: collapse;
+		  margin: 0 auto;
+		}
+		#bocce-standings-container td {
+		  padding: 0 5px;
+		}
+		.table-wrapper {
+		  max-height: 300px; /* or whatever height you want */
+		  overflow-y: auto;
+		  border: 1px solid #ccc;
+		}
+
+		.table-wrapper table {
+		  width: 100%;
+		  border-collapse: collapse;
+		}
+
+		.table-wrapper thead th {
+		  position: sticky;
+		  top: 0;
+		  background-color: #f2f2f2; /* match your theme */
+		  z-index: 1;
+		}
+		@media print {
+		  #controls { display: none; }
+		  .team-box { width: 100%; margin-bottom: 20px; }
+		}
+		#downloadBtns {
+		  background: #f3f3f3;
+		  padding: 1px 1px;
+		  border-radius: 1px;
+		  border: 1px solid #ccc;
+		  display: inline-block;
+		}
+		#controlBtns {
+		  padding: 1px 1px;
+		  border-radius: 1px;
+		  border: 1px solid #ccc;
+		  display: inline-block;
+		}
+		.winner-icon { color:green; font-weight:bold; }
+		.checkmark {
+			color: red;
+			font-weight: bold;
+			margin-right: 4px;
+		}
+		.circleTeam {
+			display: inline-block;
+			padding: 4px 10px;
+			border: 2px solid black;
+			border-radius: 50%;
+			font-weight: bold;
+			margin-right: 6px;
+		}	
+		.fixedHeader {
+			position: sticky;
+			top: 0;
+			background: white;
+			z-index: 10;
+			padding: 10px;
+		}
+
+		.scrollArea {
+			height: 500px;
+			overflow-y: auto;
+		}
+
+  </style>	
+</head>
+<body>
+
+    <h1 style="display: flex; align-items: center; gap: 10px;">
+		<img src="avalon-bocce-icon-80x80.jpg" alt="Avalon Bocce Icon" style="height: 80px;">
+		<span id="titleText">Bocce Schedule and Standings</span>
+	</h1>
+
+	<div class="fixedHeader" id="bocce-standings-container"></div>
+
+    <div class="controls">
+        <div id="inputContainer" style="display: none;">
+			<label for="csvFile">**Select CSV File (Team A, Team B, Date, Time, Court):**</label>
+			<input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload()">
+        </div>	
+        
+        <div id="scheduleContainer" style="display: none;">
+            <label for="teamFilter">Filter by Team:&nbsp;&nbsp;</label>
+            <select id="teamFilter" onchange="filterSchedule()">
+                <option value="">Show All</option>
+            </select>
+			&nbsp;&nbsp;
+			<div id="downloadBtns">
+				<label>&nbsp;&nbsp;Download calendar entries:</label>&nbsp;
+				<button id='downloadBtn' disabled>Team Schedule</button>&nbsp;&nbsp;
+				<button onclick="generateIcs('all')">All Games Schedule</button>&nbsp;&nbsp;
+			</div>
+			&nbsp;&nbsp;
+			<div id="controlBtns">
+				<button onclick="window.print()">Print Schedule</button>&nbsp;&nbsp;
+				<!-- <button onclick="printSchedule()">Print Schedule</button>&nbsp;&nbsp; -->			
+				<button id="toggleControlsBtn">Hide Standings</button>			
+			</div>
+        </div>
+    </div>
+    
+    <div id="selectionInfo" style="margin-top: 20px; display: none;">
+        <p><strong>Click a row</strong> to select a game, then click the 'Download Selected Game Schedlue' button below.</p>
+        <button id="downloadSelected" onclick="generateIcs('selected')" disabled>Download Selected Game Schedule</button>
+    </div>
+	
+	    <!--<div class="table-wrapper" id="tableDisplay">-->
+		<div class="scrollArea" id="tableDisplay">
+        </div>
+		
+  <!-- Modal Container -->
+  <div id="teamModal" class="modal" style="display:none;">
+    <div class="modal-content" id="modalContent">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <table id="teamTable" rules="cols">
+        <tbody>
+          <!-- Rows will be injected here -->
+        </tbody>
+      </table>
+    </div>
+  </div>		
+
+<script>
+    // Global variables to hold the parsed data
+	game = '';
+    let games = [];
+	filteredGames = [];
+    let selectedGameId = null;
+    let gameCounter = 1; 
+	let teamData = [];
+	let currentDate = new Date().toISOString().split('T')[0];
+	let asOfDate = "";
+	let gamesPlayed = 0;	
+	let gamesWon = 0;
+	let isApp = false;
+	let appCall = "";
+	const winnerLoserTab = [];
+	winnerLoserTab['Winner G0'] = "Team 0";
+	let winnerWeeks = [];
+	
+	console.log(`navigator.userAgent=${navigator.userAgent}`);
+	isApp = navigator.userAgent.includes("AvalonBocceApp");
+	if (isApp) {
+		//document.querySelectorAll(".ics-download").forEach(btn => {btn.style.display = "none";});
+		appCall = '(...)';
+	}
+	
+	// SET FILANAME VARIABLES
+	const params = new URLSearchParams(window.location.search);
+	console.log(`params=${params}`);
+	const league = params.get("league");
+	console.log(`league=${league}`);
+	filePrefix="2026-summer";
+	if (league) {
+		filePrefix=league;   // your function
+		console.log(`filePrefix=${filePrefix}`);
+	}
+	const [year, seasonRaw] = filePrefix.split("-");
+    const season = seasonRaw.charAt(0).toUpperCase() + seasonRaw.slice(1);
+	document.getElementById("titleText").textContent =
+    `${year} ${season} Bocce Schedule and Standings`;
+
+	const tstyle = params.get("tstyle");  
+	console.log(`tstyle=${tstyle}`);
+	tableStyle="1";
+	if (tstyle) {
+		if (tstyle === "1" || tstyle === "2") {
+			tableStyle=tstyle;
+			console.log(`tableStyle=${tableStyle}`);
+		  } else {
+			tableStyle="1";
+			console.log(`Passed tstyle invalid: "${tstyle}".  tableStyle set to "1"`);
+		}	
+	} 	
+	
+	fileStandings=`${filePrefix}-bocce-standings.json`;
+	console.log(`fileStandings=${fileStandings}`);
+	fileSchedule=`${filePrefix}-bocce-schedule.csv`;
+	console.log(`fileSchedule=${fileSchedule}`);
+	fileTeams=`${filePrefix}-bocce-teams.json`;
+	console.log(`fileTeams=${fileTeams}`);
+	
+	console.log(`currentDate=${currentDate}`);
+		
+	// this routine opens a local CSV schedule file 
+	// when testing this code in a local browser
+	const fileInput = document.getElementById('csvFile');
+		fileInput.addEventListener('click', () => {
+		fileInput.value = ''; // Reset before opening picker
+	});	    
+	
+	const fallbackData = {
+		"title": "Bocce Leauge Standing Unavailable",
+		"weeks": [
+		   ]
+	}
+	
+	// Dynamically create an array of 16 teams with 2 members each
+	// for testing purposes when there is no team JSON file
+	const teams = [];
+	for (let i = 1; i <= 16; i++) {
+		teams.push({
+		team: i,
+		members: [
+		`Member 1 (C)`,  // Captain
+		`Member 2`       // Second member
+		]
+	  });
+	}
+	
+	document.getElementById("toggleControlsBtn").addEventListener("click", function () {
+		const section = document.getElementById("bocce-standings-container");
+		const btn = document.getElementById("toggleControlsBtn");
+
+		const isHidden = section.style.display === "none";
+
+		if (isHidden) {
+			section.style.display = "block";
+			btn.textContent = "Hide Standings";
+		} else {
+			section.style.display = "none";
+			btn.textContent = "Show Standings";
+		}
+	});
+
+	function printSchedule() {
+		const section = document.getElementById("bocce-standings-container");
+		// Hide before printing
+		section.style.display = "none";
+		// Restore after printing
+		window.onafterprint = () => {
+			section.style.display = "block";
+		};
+		// Trigger print dialog
+		window.print();
+	}	 
+
+ async function loadAndRender() {
+      let data;
+	  console.log(`Fetching ${fileStandings}`);
+      try {
+        const response = await fetch(fileStandings, { cache: 'reload' });
+        if (!response.ok) throw new Error("Fetch failed");
+        data = await response.json();
+      } catch (error) {
+        console.warn("Using fallback data due to fetch error:", error);
+        data = fallbackData;
+      }
+	  console.log(`teamData.length=${teamData.length}`);
+	  console.log(`data.weeks.length=${data.weeks.length}`);
+	  console.log(data.weeks);
+	  winnerWeeks = data.weeks;
+	  if ( data.weeks.length < 1 ) {
+			console.log('Bypassing render of standings because data is unavailable.');
+			// disable standings control
+			const btn = document.getElementById("toggleControlsBtn");
+			btn.disabled = true;
+		} else {
+			console.log('calling calculateTeamWins...');
+			const wins = calculateTeamWins(data.weeks);
+			console.log('calling renderTable...');
+			renderTable(wins, gamesPlayed, asOfDate, data.title, teamData.length);
+			// enable standings control
+			const btn = document.getElementById("toggleControlsBtn");
+			btn.disabled = false;
+	  }
+    }
+	function disableToggleButton() {
+    const btn = document.getElementById("toggleControlsBtn");
+    btn.disabled = true;
+}
+
+function enableToggleButton() {
+    const btn = document.getElementById("toggleControlsBtn");
+    btn.disabled = false;
+}
+
+
+    // Function to total wins and set globals
+    function calculateTeamWins(weeks) {
+      const wins = Array(16).fill(0);
+
+      // Loop through each week
+      weeks.forEach(week => {
+        for (let i = 1; i < week.length; i++) {
+          const teamNumber = week[i];
+          if (teamNumber >= 1 && teamNumber <= 16) {
+            wins[teamNumber - 1]++;
+          }
+        }
+      });
+
+      // Set global gamesPlayed
+      gamesPlayed = weeks.length;
+
+      // Get last week's date (yyyymmdd format at position 0)
+      const lastWeekDate = weeks[weeks.length - 1][0]; // e.g. "20251215"
+      const yyyy = lastWeekDate.substring(0, 4);
+      const mm   = lastWeekDate.substring(4, 6);
+      const dd   = lastWeekDate.substring(6, 8);
+
+      // Set global asOfDate in mm/dd/yyyy format
+      asOfDate = mm + "/" + dd + "/" + yyyy;
+
+      // Calculate total games won (sum of wins array)
+      gamesWon = wins.reduce((sum, val) => sum + val, 0);
+
+      // Display info message
+      console.info("Games Played:", gamesPlayed, 
+                   "Games Won:", gamesWon, 
+                   "As Of:", asOfDate, 
+                   "Wins:", wins);
+
+      return wins;
+    }
+
+    function renderTable(wins, gamesPlayed, asOfDate, title, numberOfTeams) {
+	  console.log('renderTable: starting...');
+      const numTeams = numberOfTeams;  // wins.length;
+      const table = document.createElement('table');
+
+      // Header row
+      const titleRow = document.createElement('tr');
+      titleRow.appendChild(createCell('Weeks Played', true));
+      const titleCell = document.createElement('td');
+      titleCell.colSpan = numTeams;
+      titleCell.className = 'bold';
+      //titleCell.textContent = `${title} ${asOfDate}.  Games played so far: ${gamesWon}`;
+	  titleCell.textContent = `${title} ${asOfDate} ${appCall}`;
+      titleRow.appendChild(titleCell);
+      table.appendChild(titleRow);
+
+      // Bar rows
+      for (let level = gamesPlayed; level >= 1; level--) {
+        const row = document.createElement('tr');
+        row.appendChild(createCell(level.toString()));
+        for (let i = 0; i < numTeams; i++) {
+          const cell = document.createElement('td');
+          if (wins[i] >= level) {
+            const bar = document.createElement('div');
+            bar.className = 'gray-inner';
+            cell.appendChild(bar);
+          }
+          row.appendChild(cell);
+        }
+        table.appendChild(row);
+      }
+
+      // Team row
+      const teamRow = document.createElement('tr');
+      teamRow.appendChild(createCell('Teams', true));
+      for (let i = 1; i <= numTeams; i++) {
+        //teamRow.appendChild(createCell(i.toString()));
+		const cell = document.createElement('td');
+		cell.textContent = i.toString();
+		cell.onclick = () => showTeamAt(event, i.toString(), "0", null);
+		teamRow.appendChild(cell);
+      }
+      table.appendChild(teamRow);
+	  // Footer row
+      const footerRow = document.createElement('tr');
+      footerRow.appendChild(createCell(' '));
+      const footerCell = document.createElement('td');
+      footerCell.colSpan = numTeams;
+      footerCell.className = 'bold';
+      footerCell.textContent = `Click on the team number to see the team roster.`;
+      footerRow.appendChild(footerCell);
+      table.appendChild(footerRow);
+
+      const container = document.getElementById('bocce-standings-container');
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    function createCell(content, isBold = false) {
+      const cell = document.createElement('td');
+      cell.textContent = content;
+      if (isBold) cell.className = 'bold';
+      return cell;
+    }
+
+    async function loadTeams() {
+	  console.log(`Fetching ${fileTeams}`);
+      try {
+        const response = await fetch(fileTeams, { cache: 'reload' });
+        const data = await response.json();
+        teamData = data.teams;
+        //renderTeamList();
+      } catch (err) {
+        console.error('Failed to load team data:', err);
+		teamData = teams;
+        //renderTeamList();
+      }
+    }
+
+    function getTeamObject(teamLabel, teams) {
+		// Extract the number from "Team x"
+		const teamNumber = parseInt(teamLabel.replace('Team ', ''), 10);
+		// Find the matching team object
+		return teams.find(t => t.team === teamNumber);
+	}
+	
+	function renderTeamList() {
+      const container = document.getElementById('teamList');
+      teamData.forEach(team => {
+        const div = document.createElement('div');
+        div.className = 'team-line';
+        div.textContent = `Team ${team.team}`;
+        div.onclick = () => showTeamAt(event,`Team ${team.team}`, "Team 1");
+        container.appendChild(div);
+      });
+    }
+
+    function closeModal() {
+      document.getElementById('teamModal').style.display = 'none';
+    }
+	
+	// Close modal when clicking outside the modal content
+	window.addEventListener('click', function(event) {
+		const modal = document.getElementById('teamModal');
+		const content = document.querySelector('.modal-content');
+		if (event.target === modal) {
+			modal.style.display = 'none';
+		}
+	});
+	
+	function positionModal(event, modalContent) {
+		const padding = 10;
+		const modalWidth = modalContent.offsetWidth || 300;
+		const modalHeight = modalContent.offsetHeight || 200;
+
+		// Use pageX/Y for document-relative positioning
+		let x = event.pageX + padding;
+		let y = event.pageY + padding;
+	
+		// Clamp to viewport bounds
+		if (x + modalWidth > window.innerWidth + window.scrollX) {
+			x = window.innerWidth + window.scrollX - modalWidth - padding;
+		}
+		if (y + modalHeight > window.innerHeight + window.scrollY) {
+			y = window.innerHeight + window.scrollY - modalHeight - padding;
+		}
+
+		modalContent.style.position = 'absolute';
+		modalContent.style.left = `${x}px`;
+		modalContent.style.top = `${y}px`;
+		modalContent.style.zIndex = 1000;
+	}
+	
+	function showTeamAt(event, team1, team2, gameId) {
+	    if (gameId !== null) {
+		  selectGame(gameId);
+		};
+		if (team1.includes(":") ) { 
+			const team1Array = team1.split(":");
+			team1 = team1Array[1].trim();
+		}
+		if ( "1" === "1" ) {
+			if (team1.includes("Winner") || team1.includes("Loser") ) { 
+				team1 = winnerLoserTab[`${team1}`];
+			}
+			if (team2.includes("Winner") || team2.includes("Loser") ) { 
+				team2 = winnerLoserTab[`${team2}`];
+			}	
+		  } else {
+			team1 = resolveTeam(team1, winnerLoserTab);
+			team2 = resolveTeam(team2, winnerLoserTab);
+		}
+		let maxEntries = 0;
+		const tableBody = document.querySelector('#teamTable tbody');
+		tableBody.innerHTML = ' '; // Clear previous rows
+		if (team2 === "0" ) {
+			let header = document.createElement('tr');
+			// column 1 header
+			const teamA = getTeamObject(team1, teamData)
+			let col1 = document.createElement('th');
+			col1.textContent = `Team ${teamA.team}`;
+			header.appendChild(col1);
+			tableBody.appendChild(header);  
+			
+			const maxEntries = teamA.members.length; 
+			for (t=0; t < maxEntries; t++) {
+				const row = document.createElement('tr');
+				const column1 = document.createElement('td');
+				column1.textContent = teamA.members[t];	
+				row.appendChild(column1);
+				tableBody.appendChild(row);
+			};	
+		  } else {
+		    if ( team1 === undefined || team1.includes("Winner") || team1.includes("Loser") ) {
+				const header = document.createElement('tr');
+				// column 1 header
+				//const teamA = getTeamObject(team1, teamData)
+				const col1 = document.createElement('th');
+				col1.textContent = `Teams have not been decided for this game yet!`;
+				header.appendChild(col1);	
+				tableBody.appendChild(header);
+			  } else {
+				const header = document.createElement('tr');
+				// column 1 header
+				const teamA = getTeamObject(team1, teamData)
+				const col1 = document.createElement('th');
+				col1.textContent = `Team ${teamA.team}`;
+				header.appendChild(col1);
+				// column 2 header
+				const teamB = getTeamObject(team2, teamData)
+				const col2 = document.createElement('th');
+				col2.textContent = `Team ${teamB.team}`;
+				header.appendChild(col2);
+				tableBody.appendChild(header);
+				
+				const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
+				for (t=0; t < maxEntries; t++) {
+					const row = document.createElement('tr');
+
+					const column1 = document.createElement('td');
+					if (t+1 > teamA.members.length ) {
+						column1.textContent = " ";
+					  } else {
+						column1.textContent = teamA.members[t];
+					};
+					row.appendChild(column1);
+				
+					const column2 = document.createElement('td');
+					if (t+1 > teamB.members.length ) {
+						column2.textContent = " ";
+					  } else {
+						column2.textContent = teamB.members[t];
+					};
+					row.appendChild(column2);
+				
+					tableBody.appendChild(row);
+				};
+			};
+		};
+
+		document.getElementById('teamModal').style.display = 'block';
+		
+		// Position and show
+		const content = document.getElementById('modalContent');
+		positionModal(event, content);
+		//modal.style.display = 'block';
+	}		
+		
+		// *** 0. try to load the server side csv File
+		// ----------------- Loading CSV -----------------
+		function tryLoadFile(url){
+			(async function trySequential(){
+			console.log(`url(${url})`);
+			try {
+				const res = await fetch(url, { cache: 'reload' });
+				if(!res.ok) throw new Error('fetch failed ' + res.status);
+				const text = await res.text();
+				inputContainer.disabled = true;
+				parseCSV(text);
+				return;
+			} catch(e){
+				console.log(`tryLoadFile error fetching CSV file: ${e}`);
+				const isHidden = inputContainer.style.display === 'none';
+				inputContainer.style.display = isHidden ? 'block' : 'none';
+				return;
+				}
+			})();
+		}
+
+        // *** 1. CSV File Handling & Time Conversion ***
+
+        function convert12HourTo24Hour(timeStr) {
+            const parts = timeStr.toUpperCase().match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/);
+            if (!parts) return null;
+			
+            let hour = parseInt(parts[1], 10);
+            const minute = parts[2];
+            const ampm = parts[3];
+
+            if (ampm === 'PM' && hour !== 12) {
+                hour += 12;
+            } else if (ampm === 'AM' && hour === 12) {
+                hour = 0; 
+            }
+			
+            return `${String(hour).padStart(2, '0')}:${minute}`;
+        }
+
+        function handleFileUpload() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+					inputContainer.disabled = true;
+                    parseCSV(content);
+					inputContainer.style.display = 'none';
+                };
+                reader.readAsText(file);
+                
+                setTimeout(() => {
+                    fileInput.value = null; 
+                }, 100);
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/);
+            if (lines.length < 2) return alert("CSV file must contain a header row and at least one data row.");
+            
+            const dataLines = lines.slice(1);
+            games = [];
+            gameCounter = 1;
+			console.log('parseCSV: starting...');
+
+            dataLines.forEach(line => {
+                const cols = line.split(',');
+                if (cols.length >= 5) {
+                    const rawTime = cols[3].trim();
+                    const convertedTime = convert12HourTo24Hour(rawTime);
+                    const date = cols[2].trim();
+
+                    if (!convertedTime || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                        console.warn(`Skipping line due to invalid format: ${line}`);
+                        return;
+                    }
+
+                    games.push({
+                        id: gameCounter++,
+                        teamA: cols[0].trim(),
+                        teamB: cols[1].trim(),
+                        date: date,
+                        time24: convertedTime,
+                        time12: rawTime,       
+                        court: cols[4].trim()
+                    });
+                }
+            });
+
+            if (games.length > 0) {				
+				document.getElementById('scheduleContainer').style.display = 'flex';
+				//document.getElementById('selectionInfo').style.display = 'block';
+				if (isApp) {
+					document.getElementById('downloadBtns').style.display = 'none';
+				}
+                initScheduleDisplay();
+            } else {
+                alert("No valid game data found after parsing the CSV. Please check your columns.");
+                document.getElementById('scheduleContainer').style.display = 'none';
+                //document.getElementById('selectionInfo').style.display = 'none';
+                document.getElementById('tableDisplay').innerHTML = '';
+            }
+        }
+
+        // *** 2. Initial Table & Filter Setup (Pivot Logic) ***
+        
+        function getUniqueTeams() {
+            const teams = new Set();
+            games.forEach(game => {
+                teams.add(game.teamA);
+                teams.add(game.teamB);
+            });
+            return Array.from(teams).sort();
+        }
+        
+        function initScheduleDisplay() {
+            populateTeamFilter();
+            //renderSchedule(games);
+			filterSchedule();
+            selectGame(null); 
+        }
+		
+		function populateTeamFilter() {
+			const select = document.getElementById('teamFilter');
+			select.innerHTML = '<option value="">Show All</option>';
+
+			const uniqueTeams = getUniqueTeams();
+
+			// Filter only real team labels
+			const filtered = uniqueTeams.filter(team =>
+				team.includes("Team") && !team.includes(":")
+			);
+
+			// Sort numerically by the team number
+			filtered.sort((a, b) => {
+				const numA = parseInt(a.replace("Team", "").trim(), 10);
+				const numB = parseInt(b.replace("Team", "").trim(), 10);
+				return numA - numB;
+			});
+
+			// Populate dropdown
+			filtered.forEach(team => {
+				const option = document.createElement('option');
+				option.value = team;
+				option.textContent = team;
+				select.appendChild(option);
+			});
+		}
+		
+		function resolveTeam(ref, winnerLoserTab) {
+			// If the reference is a winner/loser key, return the mapped team
+			if (winnerLoserTab.hasOwnProperty(ref)) {
+				return winnerLoserTab[ref];
+			}
+
+			// Otherwise return the original value (like "Team 7")
+			return ref;
+		}	
+		
+		function formatTeamName(teamA, teamB, date) {
+			let debug = true;
+			let gameNum = null;
+			let gameNumView = null;
+			let html = " ";
+			let teamParts = [];
+			let newTeamA, newTeamB, newTeamAName = 'Team 99';
+			const searchDate = date.replaceAll("-", "");
+			
+			// remove game number from TeamA "G1: Team 6" and save to define 
+			// Teams of game x.
+			
+			if ( teamA.includes(":") ) {
+				teamParts = teamA.split(":");
+				gameNum = teamParts[0].trim();
+				newTeamAName = teamParts[1].trim();
+				gameNumView = `${gameNum}: `;
+			  } else {
+				newTeamAName = teamA;
+				gameNum = null;
+				gameNumView = null;
+			}
+			if (debug) {console.log(`gameNumView=${gameNumView}`) };
+			if (debug) {console.log(`newTeamAName=${newTeamAName}  teamB=${teamB}`)};
+			newTeamA = resolveTeam(newTeamAName, winnerLoserTab);
+			newTeamB = resolveTeam(teamB, winnerLoserTab);
+			if (debug) {console.log(`newTeamA=${newTeamA}  newTeamB=${newTeamB}`)};
+			// I played with two choices for denoting a team that won the match
+			// 1. <span class="checkmark">✓</span>${newTeamA}
+			// 2. <span class="circleTeam">${newTeamA}</span>
+			//
+			// Extract numeric team number from "Team 02"
+			let teamANum = parseInt(newTeamA.replace("Team ", ""), 10);
+			let teamBNum = parseInt(newTeamB.replace("Team ", ""), 10);
+			if (debug) {console.log(`teamANum=${teamANum}  teamBNum=${teamBNum}`)};
+			let week = winnerWeeks.find(arr => arr[0] === searchDate);
+			if (debug) {console.log(week)};
+			html = `<strong>${gameNumView}</strong>${newTeamA} vs ${newTeamB}`; 
+			if (week) {
+				if (week.slice(1).includes(teamANum)) {
+					winnerLoserTab[`Winner ${gameNum}`] = newTeamA;
+					winnerLoserTab[`Loser ${gameNum}`] = newTeamB;
+					html = `<strong>${gameNumView}</strong><span class="circleTeam">${newTeamA}</span>vs ${newTeamB}`;
+				  } else if (week.slice(1).includes(teamBNum)) {	
+					winnerLoserTab[`Loser ${gameNum}`] = newTeamA;
+					winnerLoserTab[`Winner ${gameNum}`] = newTeamB;
+					html = `<strong>${gameNumView}</strong>${newTeamA} vs <span class="circleTeam">${newTeamB}</span>`;
+				  } else {
+					html = `<strong>${gameNumView}</strong>${newTeamA} vs ${newTeamB}`;
+				}
+			}
+		if ( "1" === "2" ) {
+			if (week && week.slice(1).includes(teamANum)) {
+				if ( gameNum != null) { 
+					//winnerLoserTab[`Winner ${gameNum}`] = newTeamA;
+					html = `<strong>${gameNum}</strong>: <span class="circleTeam">${newTeamA}</span>vs `;
+				  } else {	
+					html = `<span class="circleTeam">${newTeamA}</span>vs `;
+				}	
+			  } else {
+				if ( gameNum != null) { 
+					//winnerLoserTab[`Loser ${gameNum}`] = newTeamA;
+					html = `<strong>${gameNum}</strong>: ${newTeamA} vs `;
+				  } else {	
+					html = `${newTeamA} vs `;
+				}	
+			}
+			if (week && week.slice(1).includes(teamBNum)) {
+				if ( gameNum != null) { 
+					//winnerLoserTab[`Winner ${gameNum}`] = newTeamB;
+					html += `<span class="circleTeam">${newTeamB}</span>`;
+				  } else {	
+					html += `<span class="circleTeam">${newTeamB}</span>`;
+				}	
+			  } else {		  
+				if ( gameNum != null) { 
+					//winnerLoserTab[`Loser ${gameNum}`] = newTeamB;
+					html += `${newTeamB}`;
+				  } else {	
+					html += `${newTeamB}`;
+				}	
+			}
+		}
+		return html;	
+	}
+
+
+        // ----------------------------------------------------------------------
+        // ** PIVOT TABLE RENDERING LOGIC **
+        // ----------------------------------------------------------------------
+        function renderSchedule(data) {
+			console.log(`renderSchedule: starting...`);
+            const tableDisplay = document.getElementById('tableDisplay');
+            
+            if (data.length === 0) {
+                tableDisplay.innerHTML = '<p>No games to display.</p>';
+                return;
+            }
+
+            // 1. Collect all unique dates and times
+            const uniqueDates = Array.from(new Set(data.map(g => g.date))).sort();
+            const uniqueTime24 = Array.from(new Set(data.map(g => g.time24))).sort();
+            const timeMap = {}; 
+            uniqueTime24.forEach(t24 => {
+                const game = data.find(g => g.time24 === t24);
+                if (game) timeMap[t24] = game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "");
+            });
+
+
+            // 2. Group games by Date and Time for easy lookup
+            const pivotedData = {};
+            data.forEach(game => {
+                const key = `${game.date}-${game.time24}`;
+                if (!pivotedData[key]) {
+                    pivotedData[key] = []; // Use an array to support multiple games at the same time/date
+                }
+                pivotedData[key].push(game); 
+            });
+			let tableHTML= ''
+			if (tableStyle === "1") {
+				// 3. Build the HTML Table
+				tableHTML = `
+					<table>
+						<thead>
+							<tr>
+								<th style="width: 12%;">Date</th>
+								${uniqueTime24.map(t24 => `<th>${timeMap[t24]}</th>`).join('')}
+							</tr>
+						</thead>
+						<tbody id="scheduleBody">
+				`;
+			
+				uniqueDates.forEach(date => {
+					// calculate row id using DATE
+					const rowId = `row${date.replaceAll("-", "")}`;;				
+					tableHTML += `<tbody><tr id="${rowId}"><td text-align: center; >${date}</td>`;
+					
+					uniqueTime24.forEach(time24 => {
+						const key = `${date}-${time24}`;
+						const gamesForSlot = pivotedData[key] || [];
+						//const mytime = g.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "");
+						if (gamesForSlot.length > 0) {
+							// Concatenate multiple games into one cell, using a line break
+							const cellContent = gamesForSlot.map(game => `
+								<div class="game-row" 
+									data-game-id="${game.id}" 
+									onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
+									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+									<strong>${game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "")}</strong> @ 
+									<strong>${game.court}</strong><br>
+									${formatTeamName(game.teamA, game.teamB, date)}
+									<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
+								</div>
+							`).join('');
+
+							tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`;
+
+						} else {
+							// Empty cell
+							tableHTML += `<td></td>`;
+						}
+					});
+						
+					tableHTML += `</tr></tbody>`;
+				});					
+
+			  } else {
+				// 3. Build the HTML Table
+				tableHTML = `
+					<table>
+						<thead>
+							<tr>
+								<th style="text-align: center; width: 15%;">Date</th><th style="text-align: center;">Time</th>
+								<th style="text-align: center;">Court 1</th><th style="text-align: center;">Court 2</th>
+							</tr>
+						</thead>
+						<tbody id="scheduleBody">
+				`;
+				
+				uniqueDates.forEach(date => {
+					// calculate row id using DATE
+					const rowId = `row${date.replaceAll("-", "")}`;
+					console.log(`rowId=${rowId}`);
+					tableHTML += `<tbody><tr id="${rowId}"><td rowspan="2" style="text-align: center;">${date}</td>`;
+					
+					uniqueTime24.forEach(time24 => {
+						const key = `${date}-${time24}`;
+						const gamesForSlot = pivotedData[key] || [];
+						tableHTML += `<td style="text-align: center;">${time24}</td>`;
+						if (gamesForSlot.length > 0) {
+							// Concatenate multiple games into one cell, using a line break
+							const cellContent = gamesForSlot.map(game => `
+								<td style="vertical-align: top; text-align: center;"
+								<div class="game-row" 
+									data-game-id="${game.id}" 
+									onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
+									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+									<strong>${game.court}</strong><br>
+									${game.teamA} vs ${game.teamB}
+									<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
+								</div>
+								</td>
+							`).join('');
+
+							<!-- tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`; -->
+							tableHTML += `${cellContent}</tr><tr>`;
+
+						} else {
+							// Empty cell
+							tableHTML += `<td></td>`;
+						}
+					});
+						
+					tableHTML += `</tr></tbody>`;
+				});
+			}		
+            
+            tableHTML += '</tbody></table>';
+            tableDisplay.innerHTML = tableHTML;
+            
+            if (selectedGameId !== null) {
+                selectGame(selectedGameId);
+            }
+        }
+
+        // ----------------------------------------------------------------------
+        // END PIVOT TABLE RENDERING LOGIC
+        // ----------------------------------------------------------------------
+
+
+        // *** 3. Filtering Logic ***
+
+        function filterSchedule() {
+            const filterValue = document.getElementById('teamFilter').value;
+            filteredGames = games;
+			
+            //filteredGames = games.filter(game => 
+            //        game.date >= currentDate
+            //    );
+
+            if (filterValue) {
+                filteredGames = games.filter(game => 
+                    game.teamA === filterValue || game.teamB === filterValue
+                );
+            }
+			
+            renderSchedule(filteredGames);
+			const positionDate = getLastWeek(winnerWeeks);
+			setTimeout(() => {
+				const row = document.getElementById(`${positionDate}`);
+				if (row) row.scrollIntoView({ behavior: "smooth" });
+			}, 50);
+
+			//document.getElementById("row2026105").scrollIntoView();
+			//const wrapper = document.getElementById("scrollArea");
+			//const row = document.getElementById("row20261105");
+			//wrapper.scrollTop = row.offsetTop;
+            selectGame(null);
+			console.log(`FilterSchedule: filterValue(${filterValue})`); // Debug output
+            if (filterValue === "") {
+                downloadBtn.disabled = true;
+            } else {
+                downloadBtn.disabled = false;
+            }			
+        }
+
+		function getLastWeek(weeks) {
+			return "row" + weeks.reduce((max, row) => {
+				return row[0] > max ? row[0] : max;
+			}, "00000000");
+			//let latest = weeks.reduce((max, row) => {
+			//	return row[0] > max ? row[0] : max;
+			//}, "00000000");
+			//let rowId = "row" + latest;
+
+			//console.log("Latest row ID:", rowId);
+			//return rowId;
+		}
+
+
+        // *** 4. Row Selection Logic ***
+        
+        function selectGame(gameId) {
+            selectedGameId = gameId;
+            // Target the individual game div elements
+            const gameCells = document.querySelectorAll('#tableDisplay .game-row');
+            const downloadButton = document.getElementById('downloadSelected');
+
+            gameCells.forEach(cell => {
+                cell.classList.remove('selected-row');
+                if (cell.dataset.gameId == gameId) {
+                    cell.classList.add('selected-row');
+                }
+            });
+
+            if (gameId !== null) {
+                downloadButton.disabled = false;
+                downloadButton.textContent = `Download Selected Game (${gameId}) (.ics)`;
+            } else {
+                downloadButton.disabled = true;
+                downloadButton.textContent = 'Download Selected Game (.ics)';
+            }
+        }
+
+        // *** 5. ICS File Generation Logic (Unchanged) ***
+        
+        function escapeICS(str) {
+            return String(str).replace(/([,;])/g, '\\$1').replace(/\n/g, '\\n');
+        }
+
+        function formatICSDate(dateStr, time24Str) {
+            const [year, month, day] = dateStr.split('-');
+            const [hour, minute] = time24Str.split(':');
+            return `${year}${month}${day}T${hour}${minute}00`;
+        }
+
+        function formatICSDateOnly(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            return `${year}${month}${day}`;
+        }
+
+        function generateIcs(type) {
+            let selectedGames = [];
+            let fileName = '';
+
+            if (type === 'all') {
+                const gamesByDate = games.reduce((acc, game) => {
+                    (acc[game.date] = acc[game.date] || []).push(game);
+                    return acc;
+                }, {});
+                
+                selectedGames = Object.entries(gamesByDate).map(([date, games]) => ({ date, games }));
+                fileName = 'all_dates_schedule.ics';
+
+            } else if (type === 'selected' && selectedGameId !== null) {
+                const game = games.find(g => g.id === selectedGameId);
+                if (!game) return alert("Selected game not found.");
+                
+                selectedGames.push(game);
+                fileName = `game_${game.teamA}_vs_${game.teamB}_${game.date}.ics`;
+            } else {
+                return alert("Please upload a CSV or select a game first.");
+            }
+
+            let icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Game Schedule Generator//EN`;
+
+            if (type === 'all') {
+                selectedGames.forEach(dayGroup => {
+                    const date = dayGroup.date;
+                    
+                    const dateOnly = formatICSDateOnly(date);
+                    
+                    const nextDay = new Date(date);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    const endDateOnly = formatICSDateOnly(`${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`);
+                    
+                    const descriptionLines = dayGroup.games
+                        .sort((a, b) => a.time24.localeCompare(b.time24))
+                        .map(game => 
+                            `${game.time12} at ${game.court}: ${game.teamA} vs ${game.teamB}`
+                        ).join('\\n');
+
+                    const summary = escapeICS(`Game Day Schedule: ${date}`);
+                    const description = escapeICS(descriptionLines);
+
+                    icsContent += `
+BEGIN:VEVENT
+UID:${date}-ALLGAMES@gameschedule.com
+DTSTART;VALUE=DATE:${dateOnly}
+DTEND;VALUE=DATE:${endDateOnly}
+SUMMARY:${summary}
+DESCRIPTION:${description}
+LOCATION:Various Courts
+END:VEVENT`;
+                });
+
+            } else { 
+                const game = selectedGames[0]; 
+                
+                const dateTimeStart = formatICSDate(game.date, game.time24);
+                
+                const gameDateTime = new Date(`${game.date}T${game.time24}:00`);
+                const endTime = new Date(gameDateTime.getTime() + (45 * 60000)); 
+
+                let endDateStr = game.date;
+                if (endTime.getDate() !== gameDateTime.getDate()) {
+                    endDateStr = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}`;
+                }
+
+                const endHour = String(endTime.getHours()).padStart(2, '0');
+                const endMinute = String(endTime.getMinutes()).padStart(2, '0');
+                const endTime24 = `${endHour}:${endMinute}`;
+                
+                const dateTimeEnd = formatICSDate(endDateStr, endTime24);
+
+                const summary = escapeICS(`Bocce: ${game.court}: ${game.teamA} vs ${game.teamB}`);
+                const description = escapeICS(`Game Details:\\nTeams: ${game.teamA} vs ${game.teamB}\\nLocation: ${game.court}\\nTime: ${game.time12}`);
+
+                icsContent += `
+BEGIN:VEVENT
+DTSTART:${dateTimeStart}
+DTEND:${dateTimeEnd}
+SUMMARY:${summary}
+END:VEVENT`;
+
+                var icsContentOLD = `
+BEGIN:VEVENT
+UID:${game.id}-${game.date}-${game.time24}@gameschedule.com
+DTSTART:${dateTimeStart}
+DTEND:${dateTimeEnd}
+SUMMARY:${summary}
+DESCRIPTION:${description}
+LOCATION:${escapeICS(game.court)}
+END:VEVENT`;
+            }
+
+            icsContent += `
+END:VCALENDAR`;
+
+            // Trigger the download
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+		
+	function generateFilteredICS(events) {
+		const header = [
+			'BEGIN:VCALENDAR',
+			'VERSION:2.0',
+			'PRODID:-//YourApp//Game Calendar//EN'
+	];
+
+  const footer = ['END:VCALENDAR'];
+
+  const body = events.map(event => {            
+                
+    const dateTimeStart = formatICSDate(event.date, event.time24);
+                
+    const eventDateTime = new Date(`${event.date}T${event.time24}:00`);
+    const endTime = new Date(eventDateTime.getTime() + (45 * 60000)); 
+
+    let endDateStr = event.date;
+    if (endTime.getDate() !== eventDateTime.getDate()) {
+        endDateStr = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}`;
+    }
+
+    const endHour = String(endTime.getHours()).padStart(2, '0');
+    const endMinute = String(endTime.getMinutes()).padStart(2, '0');
+    const endTime24 = `${endHour}:${endMinute}`;
+                
+    const dateTimeEnd = formatICSDate(endDateStr, endTime24);
+
+    const summary = escapeICS(`Bocce: ${event.court}: ${event.teamA} vs ${event.teamB}`);
+    const description = escapeICS(`event Details:\\nTeams: ${event.teamA} vs ${event.teamB}\\nLocation: ${event.court}\\nTime: ${event.time12}`);
+				
+	return [
+		'BEGIN:VEVENT',
+		`UID:${event.id}-${event.date}-${event.time24}@gameschedule.com`,
+		`DTSTART:${dateTimeStart}`,
+		`DTEND:${dateTimeEnd}`,
+		`SUMMARY:${summary}`,
+		`DESCRIPTION:${description}`,
+		`LOCATION:${escapeICS(event.court)}`,
+		'END:VEVENT'
+	].join('\r\n');
+  });
+
+  return [...header, ...body, ...footer].join('\r\n');
+}
+
+	function formatDate(date) {
+		const d = new Date(date);
+		return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+	}
+
+	function escapeText(text) {
+		return String(text).replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n');
+	}	
+
+	function downloadICS(content, filename = 'games.ics') {
+		const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+		const link = document.createElement('a');
+		link.href = URL.createObjectURL(blob);
+		link.download = filename;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(link.href);
+	}	
+
+	document.getElementById('downloadBtn').addEventListener('click', () => {
+		const icsContent = generateFilteredICS(filteredGames);
+		downloadICS(icsContent);
+	});
+
+	console.log("Calling Load Functions...");
+	loadTeams();
+	loadAndRender();
+	console.log(`Loading ${fileSchedule}`);
+	tryLoadFile(fileSchedule);
+
+    </script>
+
+</body>
+</html>

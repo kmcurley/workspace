@@ -833,8 +833,8 @@ function enableToggleButton() {
 				gameNumView = `${gameNum}: `;
 			  } else {
 				newTeamAName = teamA;
-				gameNum = null;
-				gameNumView = null;
+				gameNum = "";
+				gameNumView = "";
 			}
 			if (debug) {console.log(`newTeamAName=${newTeamAName}  teamB=${teamB}`)};
 			newTeamA = resolveTeam(newTeamAName, winnerLoserTab);

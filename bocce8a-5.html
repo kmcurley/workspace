@@ -170,19 +170,6 @@
 			font-weight: bold;
 			margin-right: 6px;
 		}	
-		.fixedHeader {
-			position: sticky;
-			top: 0;
-			background: white;
-			z-index: 10;
-			padding: 10px;
-		}
-
-		.scrollArea {
-			height: 500px;
-			overflow-y: auto;
-		}
-
   </style>	
 </head>
 <body>
@@ -190,9 +177,10 @@
     <h1 style="display: flex; align-items: center; gap: 10px;">
 		<img src="avalon-bocce-icon-80x80.jpg" alt="Avalon Bocce Icon" style="height: 80px;">
 		<span id="titleText">Bocce Schedule and Standings</span>
+</h1>
 	</h1>
 
-	<div class="fixedHeader" id="bocce-standings-container"></div>
+	<div id="bocce-standings-container"></div>
 
     <div class="controls">
         <div id="inputContainer" style="display: none;">
@@ -226,7 +214,7 @@
     </div>
 	
 	    <!--<div class="table-wrapper" id="tableDisplay">-->
-		<div class="scrollArea" id="tableDisplay">
+		<div id="tableDisplay">
         </div>
 		
   <!-- Modal Container -->
@@ -259,6 +247,8 @@
 	winnerLoserTab['Winner G0'] = "Team 0";
 	let winnerWeeks = [];
 	
+	console.log(`currentDate=${currentDate}`);
+	
 	console.log(`navigator.userAgent=${navigator.userAgent}`);
 	isApp = navigator.userAgent.includes("AvalonBocceApp");
 	if (isApp) {
@@ -266,7 +256,7 @@
 		appCall = '(...)';
 	}
 	
-	// SET FILANAME VARIABLES
+	// Process parms passed on url command
 	const params = new URLSearchParams(window.location.search);
 	console.log(`params=${params}`);
 	const league = params.get("league");
@@ -292,8 +282,9 @@
 			tableStyle="1";
 			console.log(`Passed tstyle invalid: "${tstyle}".  tableStyle set to "1"`);
 		}	
-	} 	
+	} 
 	
+	// SET FILANAME VARIABLES
 	fileStandings=`${filePrefix}-bocce-standings.json`;
 	console.log(`fileStandings=${fileStandings}`);
 	fileSchedule=`${filePrefix}-bocce-schedule.csv`;
@@ -301,8 +292,6 @@
 	fileTeams=`${filePrefix}-bocce-teams.json`;
 	console.log(`fileTeams=${fileTeams}`);
 	
-	console.log(`currentDate=${currentDate}`);
-		
 	// this routine opens a local CSV schedule file 
 	// when testing this code in a local browser
 	const fileInput = document.getElementById('csvFile');
@@ -327,8 +316,9 @@
 		`Member 2`       // Second member
 		]
 	  });
-	}
+	}	
 	
+	// SETUP HIDE AND SHOW FUNCTION FOR TEAM STANDINGS BAR GRAPH
 	document.getElementById("toggleControlsBtn").addEventListener("click", function () {
 		const section = document.getElementById("bocce-standings-container");
 		const btn = document.getElementById("toggleControlsBtn");
@@ -343,59 +333,162 @@
 			btn.textContent = "Show Standings";
 		}
 	});
+	
+	// Close modal when clicking outside the modal content
+	window.addEventListener('click', function(event) {
+		const modal = document.getElementById('teamModal');
+		const content = document.querySelector('.modal-content');
+		if (event.target === modal) {
+			modal.style.display = 'none';
+		}
+	});	
+	
+	if ("1" === "1" ) {
+		// SETUP DEFAULTS
+		teamData = teams;
+		winnerWeeks = fallbackData.weeks;
+		// --- Load CSV and JSON ---
+		Promise.all([
+		  fetch(fileSchedule + "?ts=" + Date.now()).then(r => r.text()),
+		  fetch(fileStandings + "?ts=" + Date.now()).then(r => r.json()),
+		  fetch(fileTeams + "?ts=" + Date.now()).then(r => r.json()).catch(() => ({teams:[]}))
+		]).then(([csvText, standingsData, teamsData]) => {
 
-	function printSchedule() {
-		const section = document.getElementById("bocce-standings-container");
-		// Hide before printing
-		section.style.display = "none";
-		// Restore after printing
-		window.onafterprint = () => {
-			section.style.display = "block";
-		};
-		// Trigger print dialog
-		window.print();
-	}	 
+		  teamData = teamsData.teams;
+		  winnerWeeks = standingsData.weeks;
+		  console.log(`teamData.length=${teamData.length}`);
+		  console.log(`winnerWeeks.length=${winnerWeeks.length}`);
+		  console.log(winnerWeeks.weeks);
 
- async function loadAndRender() {
-      let data;
-	  console.log(`Fetching ${fileStandings}`);
+		  if ( winnerWeeks.length < 1 ) {
+				console.log('Bypassing render of standings because data is unavailable.');
+				// disable standings control
+				const btn = document.getElementById("toggleControlsBtn");
+				btn.disabled = true;
+			} else {
+				console.log('calling calculateTeamWins...');
+				const wins = calculateTeamWins(winnerWeeks);
+				console.log(`wins=${wins}`);
+				console.log('calling renderTable...');
+				renderTable(wins, gamesPlayed, asOfDate, standingsData.title, teamData.length);
+		  }	 
+		  inputContainer.disabled = true;		  
+		  parseCSV(csvText);
+		  //parseJsonResults(jsonData);
+		  //renderSchedule();
+		  //applySavedResults();
+		});	
+	  } else {	
+		console.log("Calling Load Functions...");
+		loadTeams();
+		loadAndRender();
+		console.log(`Loading ${fileSchedule}`);
+		tryLoadFile(fileSchedule);	
+	}
+	
+    async function loadTeams() {
+	  console.log(`Fetching ${fileTeams}`);
       try {
-        const response = await fetch(fileStandings, { cache: 'reload' });
-        if (!response.ok) throw new Error("Fetch failed");
-        data = await response.json();
-      } catch (error) {
-        console.warn("Using fallback data due to fetch error:", error);
-        data = fallbackData;
+        const response = await fetch(fileTeams, { cache: 'reload' });
+        const data = await response.json();
+        teamData = data.teams;
+        //renderTeamList();
+      } catch (err) {
+        console.error('Failed to load team data:', err);
+		teamData = teams;
+        //renderTeamList();
       }
-	  console.log(`teamData.length=${teamData.length}`);
-	  console.log(`data.weeks.length=${data.weeks.length}`);
-	  console.log(data.weeks);
-	  winnerWeeks = data.weeks;
-	  if ( data.weeks.length < 1 ) {
-			console.log('Bypassing render of standings because data is unavailable.');
-			// disable standings control
-			const btn = document.getElementById("toggleControlsBtn");
-			btn.disabled = true;
-		} else {
-			console.log('calling calculateTeamWins...');
-			const wins = calculateTeamWins(data.weeks);
-			console.log('calling renderTable...');
-			renderTable(wins, gamesPlayed, asOfDate, data.title, teamData.length);
-			// enable standings control
-			const btn = document.getElementById("toggleControlsBtn");
-			btn.disabled = false;
-	  }
+    }	
+
+	async function loadAndRender() {
+		  let data;
+		  console.log(`Fetching ${fileStandings}`);
+		  try {
+			const response = await fetch(fileStandings, { cache: 'reload' });
+			if (!response.ok) { throw new Error("Fetch failed") };
+			data = await response.json();
+		  } catch (error) {
+			console.warn("Using fallback data due to fetch error:", error);
+			data = fallbackData;
+		  }
+		  console.log(`teamData.length=${teamData.length}`);
+		  console.log(`data.weeks.length=${data.weeks.length}`);
+		  console.log(data.weeks);
+		  winnerWeeks = data.weeks;
+		  if ( data.weeks.length < 1 ) {
+				console.log('Bypassing render of standings because data is unavailable.');
+				// disable standings control
+				const btn = document.getElementById("toggleControlsBtn");
+				btn.disabled = true;
+			} else {
+				console.log('calling calculateTeamWins...');
+				const wins = calculateTeamWins(data.weeks);
+				console.log('calling renderTable...');
+				renderTable(wins, gamesPlayed, asOfDate, data.title, teamData.length);
+				// enable standings control
+				const btn = document.getElementById("toggleControlsBtn");
+				btn.disabled = false;
+		  }
     }
+	
+	// ----------------- Loading CSV -----------------
+	function tryLoadFile(url){
+		(async function trySequential(){
+		console.log(`url(${url})`);
+		try {
+			const res = await fetch(url, { cache: 'reload' });
+			if(!res.ok) { throw new Error('fetch failed ' + res.status); }
+			const text = await res.text();
+			inputContainer.disabled = true;
+			parseCSV(text);
+			console.log(`Fetch successful. text.length=${text.length})`);
+			return text;
+		} catch(e){
+			console.log(`tryLoadFile error fetching CSV file: ${e}`);
+			const isHidden = inputContainer.style.display === 'none';
+			inputContainer.style.display = isHidden ? 'block' : 'none';
+			return false;
+			}
+		})();
+	}	
+	
+	function setupForTesting() {		
+		// this routine opens a local CSV schedule file 
+		// when testing this code in a local browser
+		const fileInput = document.getElementById('csvFile');
+			fileInput.addEventListener('click', () => {
+			fileInput.value = ''; // Reset before opening picker
+		});	    
+		
+		const fallbackData = {
+			"title": "Bocce Leauge Standing Unavailable",
+			"weeks": [
+			   ]
+		}
+		
+		// Dynamically create an array of 16 teams with 2 members each
+		// for testing purposes when there is no team JSON file
+		const teams = [];
+		for (let i = 1; i <= 16; i++) {
+			teams.push({
+			team: i,
+			members: [
+			`Member 1 (C)`,  // Captain
+			`Member 2`       // Second member
+			]
+		  });
+		}
+	}	
+	
 	function disableToggleButton() {
-    const btn = document.getElementById("toggleControlsBtn");
-    btn.disabled = true;
-}
+		const btn = document.getElementById("toggleControlsBtn");
+		btn.disabled = true;
+	}
 
-function enableToggleButton() {
-    const btn = document.getElementById("toggleControlsBtn");
-    btn.disabled = false;
-}
-
+	function enableToggleButton() {
+		const btn = document.getElementById("toggleControlsBtn");
+		btn.disabled = false;
+	}
 
     // Function to total wins and set globals
     function calculateTeamWins(weeks) {
@@ -500,20 +593,6 @@ function enableToggleButton() {
       return cell;
     }
 
-    async function loadTeams() {
-	  console.log(`Fetching ${fileTeams}`);
-      try {
-        const response = await fetch(fileTeams, { cache: 'reload' });
-        const data = await response.json();
-        teamData = data.teams;
-        //renderTeamList();
-      } catch (err) {
-        console.error('Failed to load team data:', err);
-		teamData = teams;
-        //renderTeamList();
-      }
-    }
-
     function getTeamObject(teamLabel, teams) {
 		// Extract the number from "Team x"
 		const teamNumber = parseInt(teamLabel.replace('Team ', ''), 10);
@@ -536,154 +615,137 @@ function enableToggleButton() {
       document.getElementById('teamModal').style.display = 'none';
     }
 	
-	// Close modal when clicking outside the modal content
-	window.addEventListener('click', function(event) {
-		const modal = document.getElementById('teamModal');
-		const content = document.querySelector('.modal-content');
-		if (event.target === modal) {
-			modal.style.display = 'none';
-		}
-	});
 	
-	function positionModal(event, modalContent) {
-		const padding = 10;
-		const modalWidth = modalContent.offsetWidth || 300;
-		const modalHeight = modalContent.offsetHeight || 200;
+		function positionModal(event, modalContent) {
+			const padding = 10;
+			const modalWidth = modalContent.offsetWidth || 300;
+			const modalHeight = modalContent.offsetHeight || 200;
 
-		// Use pageX/Y for document-relative positioning
-		let x = event.pageX + padding;
-		let y = event.pageY + padding;
-	
-		// Clamp to viewport bounds
-		if (x + modalWidth > window.innerWidth + window.scrollX) {
-			x = window.innerWidth + window.scrollX - modalWidth - padding;
-		}
-		if (y + modalHeight > window.innerHeight + window.scrollY) {
-			y = window.innerHeight + window.scrollY - modalHeight - padding;
-		}
-
-		modalContent.style.position = 'absolute';
-		modalContent.style.left = `${x}px`;
-		modalContent.style.top = `${y}px`;
-		modalContent.style.zIndex = 1000;
-	}
-	
-	function showTeamAt(event, team1, team2, gameId) {
-	    if (gameId !== null) {
-		  selectGame(gameId);
-		};
-		if (team1.includes(":") ) { 
-			const team1Array = team1.split(":");
-			team1 = team1Array[1].trim();
-		}
-		if ( "1" === "1" ) {
-			if (team1.includes("Winner") || team1.includes("Loser") ) { 
-				team1 = winnerLoserTab[`${team1}`];
+			// Use pageX/Y for document-relative positioning
+			let x = event.pageX + padding;
+			let y = event.pageY + padding;
+		
+			// Clamp to viewport bounds
+			if (x + modalWidth > window.innerWidth + window.scrollX) {
+				x = window.innerWidth + window.scrollX - modalWidth - padding;
 			}
-			if (team2.includes("Winner") || team2.includes("Loser") ) { 
-				team2 = winnerLoserTab[`${team2}`];
-			}	
-		  } else {
-			team1 = resolveTeam(team1, winnerLoserTab);
-			team2 = resolveTeam(team2, winnerLoserTab);
+			if (y + modalHeight > window.innerHeight + window.scrollY) {
+				y = window.innerHeight + window.scrollY - modalHeight - padding;
+			}
+
+			modalContent.style.position = 'absolute';
+			modalContent.style.left = `${x}px`;
+			modalContent.style.top = `${y}px`;
+			modalContent.style.zIndex = 1000;
 		}
-		let maxEntries = 0;
-		const tableBody = document.querySelector('#teamTable tbody');
-		tableBody.innerHTML = ' '; // Clear previous rows
-		if (team2 === "0" ) {
-			let header = document.createElement('tr');
-			// column 1 header
-			const teamA = getTeamObject(team1, teamData)
-			let col1 = document.createElement('th');
-			col1.textContent = `Team ${teamA.team}`;
-			header.appendChild(col1);
-			tableBody.appendChild(header);  
-			
-			const maxEntries = teamA.members.length; 
-			for (t=0; t < maxEntries; t++) {
-				const row = document.createElement('tr');
-				const column1 = document.createElement('td');
-				column1.textContent = teamA.members[t];	
-				row.appendChild(column1);
-				tableBody.appendChild(row);
-			};	
-		  } else {
-		    if ( team1 === undefined || team1.includes("Winner") || team1.includes("Loser") ) {
-				const header = document.createElement('tr');
-				// column 1 header
-				//const teamA = getTeamObject(team1, teamData)
-				const col1 = document.createElement('th');
-				col1.textContent = `Teams have not been decided for this game yet!`;
-				header.appendChild(col1);	
-				tableBody.appendChild(header);
+	
+		function showTeamAt(event, team1, team2, gameId) {
+			if (gameId !== null) {
+			  selectGame(gameId);
+			};
+			if (team1.includes(":") ) { 
+				const team1Array = team1.split(":");
+				team1 = team1Array[1].trim();
+			}
+			if ( "1" === "1" ) {
+				if (team1.includes("Winner") || team1.includes("Loser") ) { 
+					team1 = winnerLoserTab[`${team1}`];
+				}
+				if (team2.includes("Winner") || team2.includes("Loser") ) { 
+					team2 = winnerLoserTab[`${team2}`];
+				}	
 			  } else {
-				const header = document.createElement('tr');
+				team1 = resolveTeam(team1, winnerLoserTab);
+				team2 = resolveTeam(team2, winnerLoserTab);
+			}
+			let maxEntries = 0;
+			const tableBody = document.querySelector('#teamTable tbody');
+			tableBody.innerHTML = ' '; // Clear previous rows
+			if (team2 === "0" ) {
+				let header = document.createElement('tr');
 				// column 1 header
 				const teamA = getTeamObject(team1, teamData)
-				const col1 = document.createElement('th');
+				let col1 = document.createElement('th');
 				col1.textContent = `Team ${teamA.team}`;
 				header.appendChild(col1);
-				// column 2 header
-				const teamB = getTeamObject(team2, teamData)
-				const col2 = document.createElement('th');
-				col2.textContent = `Team ${teamB.team}`;
-				header.appendChild(col2);
-				tableBody.appendChild(header);
+				tableBody.appendChild(header);  
 				
-				const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
+				const maxEntries = teamA.members.length; 
 				for (t=0; t < maxEntries; t++) {
 					const row = document.createElement('tr');
-
 					const column1 = document.createElement('td');
-					if (t+1 > teamA.members.length ) {
-						column1.textContent = " ";
-					  } else {
-						column1.textContent = teamA.members[t];
-					};
+					column1.textContent = teamA.members[t];	
 					row.appendChild(column1);
-				
-					const column2 = document.createElement('td');
-					if (t+1 > teamB.members.length ) {
-						column2.textContent = " ";
-					  } else {
-						column2.textContent = teamB.members[t];
-					};
-					row.appendChild(column2);
-				
 					tableBody.appendChild(row);
+				};	
+			  } else {
+				if ( team1 === undefined || team1.includes("Winner") || team1.includes("Loser") ) {
+					const header = document.createElement('tr');
+					// column 1 header
+					//const teamA = getTeamObject(team1, teamData)
+					const col1 = document.createElement('th');
+					col1.textContent = `Teams have not been decided for this game yet!`;
+					header.appendChild(col1);	
+					tableBody.appendChild(header);
+				  } else {
+					const header = document.createElement('tr');
+					// column 1 header
+					const teamA = getTeamObject(team1, teamData)
+					const col1 = document.createElement('th');
+					col1.textContent = `Team ${teamA.team}`;
+					header.appendChild(col1);
+					// column 2 header
+					const teamB = getTeamObject(team2, teamData)
+					const col2 = document.createElement('th');
+					col2.textContent = `Team ${teamB.team}`;
+					header.appendChild(col2);
+					tableBody.appendChild(header);
+					
+					const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
+					for (t=0; t < maxEntries; t++) {
+						const row = document.createElement('tr');
+
+						const column1 = document.createElement('td');
+						if (t+1 > teamA.members.length ) {
+							column1.textContent = " ";
+						  } else {
+							column1.textContent = teamA.members[t];
+						};
+						row.appendChild(column1);
+					
+						const column2 = document.createElement('td');
+						if (t+1 > teamB.members.length ) {
+							column2.textContent = " ";
+						  } else {
+							column2.textContent = teamB.members[t];
+						};
+						row.appendChild(column2);
+					
+						tableBody.appendChild(row);
+					};
 				};
 			};
-		};
 
-		document.getElementById('teamModal').style.display = 'block';
-		
-		// Position and show
-		const content = document.getElementById('modalContent');
-		positionModal(event, content);
-		//modal.style.display = 'block';
-	}		
-		
-		// *** 0. try to load the server side csv File
-		// ----------------- Loading CSV -----------------
-		function tryLoadFile(url){
-			(async function trySequential(){
-			console.log(`url(${url})`);
-			try {
-				const res = await fetch(url, { cache: 'reload' });
-				if(!res.ok) throw new Error('fetch failed ' + res.status);
-				const text = await res.text();
-				inputContainer.disabled = true;
-				parseCSV(text);
-				return;
-			} catch(e){
-				console.log(`tryLoadFile error fetching CSV file: ${e}`);
-				const isHidden = inputContainer.style.display === 'none';
-				inputContainer.style.display = isHidden ? 'block' : 'none';
-				return;
-				}
-			})();
-		}
+			document.getElementById('teamModal').style.display = 'block';
+			
+			// Position and show
+			const content = document.getElementById('modalContent');
+			positionModal(event, content);
+			//modal.style.display = 'block';
+		}	
 
+		function printSchedule() {
+			const section = document.getElementById("bocce-standings-container");
+			// Hide before printing
+			section.style.display = "none";
+			// Restore after printing
+			window.onafterprint = () => {
+				section.style.display = "block";
+			};
+			// Trigger print dialog
+			window.print();
+		}	
+		
         // *** 1. CSV File Handling & Time Conversion ***
 
         function convert12HourTo24Hour(timeStr) {
@@ -827,7 +889,7 @@ function enableToggleButton() {
 		}	
 		
 		function formatTeamName(teamA, teamB, date) {
-			let debug = true;
+			let debug = false;
 			let gameNum = null;
 			let gameNumView = null;
 			let html = " ";
@@ -845,10 +907,9 @@ function enableToggleButton() {
 				gameNumView = `${gameNum}: `;
 			  } else {
 				newTeamAName = teamA;
-				gameNum = null;
-				gameNumView = null;
+				gameNum = "";
+				gameNumView = "";
 			}
-			if (debug) {console.log(`gameNumView=${gameNumView}`) };
 			if (debug) {console.log(`newTeamAName=${newTeamAName}  teamB=${teamB}`)};
 			newTeamA = resolveTeam(newTeamAName, winnerLoserTab);
 			newTeamB = resolveTeam(teamB, winnerLoserTab);
@@ -860,7 +921,7 @@ function enableToggleButton() {
 			// Extract numeric team number from "Team 02"
 			let teamANum = parseInt(newTeamA.replace("Team ", ""), 10);
 			let teamBNum = parseInt(newTeamB.replace("Team ", ""), 10);
-			if (debug) {console.log(`teamANum=${teamANum}  teamBNum=${teamBNum}`)};
+			
 			let week = winnerWeeks.find(arr => arr[0] === searchDate);
 			if (debug) {console.log(week)};
 			html = `<strong>${gameNumView}</strong>${newTeamA} vs ${newTeamB}`; 
@@ -917,7 +978,7 @@ function enableToggleButton() {
         // ** PIVOT TABLE RENDERING LOGIC **
         // ----------------------------------------------------------------------
         function renderSchedule(data) {
-			console.log(`renderSchedule: starting...`);
+			const debug = true;
             const tableDisplay = document.getElementById('tableDisplay');
             
             if (data.length === 0) {
@@ -959,9 +1020,7 @@ function enableToggleButton() {
 				`;
 			
 				uniqueDates.forEach(date => {
-					// calculate row id using DATE
-					const rowId = `row${date.replaceAll("-", "")}`;;				
-					tableHTML += `<tbody><tr id="${rowId}"><td text-align: center; >${date}</td>`;
+					tableHTML += `<tbody><tr><td text-align: center; >${date}</td>`;
 					
 					uniqueTime24.forEach(time24 => {
 						const key = `${date}-${time24}`;
@@ -994,53 +1053,85 @@ function enableToggleButton() {
 
 			  } else {
 				// 3. Build the HTML Table
+				const filterValue = document.getElementById('teamFilter').value;
+				console.log(`filterValue=${filterValue}`);
 				tableHTML = `
 					<table>
 						<thead>
 							<tr>
-								<th style="text-align: center; width: 15%;">Date</th><th style="text-align: center;">Time</th>
-								<th style="text-align: center;">Court 1</th><th style="text-align: center;">Court 2</th>
+								<th style="text-align: center; width: 15%;">Date</th><th style="text-align: center; width: 10%">Time</th>
+								<th style="text-align: center; width: 28%">Court 1</th><th style="text-align: center; width: 28%">Court 2</th>
 							</tr>
 						</thead>
 						<tbody id="scheduleBody">
 				`;
 				
 				uniqueDates.forEach(date => {
-					// calculate row id using DATE
-					const rowId = `row${date.replaceAll("-", "")}`;
-					console.log(`rowId=${rowId}`);
-					tableHTML += `<tbody><tr id="${rowId}"><td rowspan="2" style="text-align: center;">${date}</td>`;
-					
+					tableHTML += `<tbody><tr><td rowspan="4" style="text-align: center;">${date}</td>`;
+
 					uniqueTime24.forEach(time24 => {
 						const key = `${date}-${time24}`;
 						const gamesForSlot = pivotedData[key] || [];
-						tableHTML += `<td style="text-align: center;">${time24}</td>`;
-						if (gamesForSlot.length > 0) {
-							// Concatenate multiple games into one cell, using a line break
-							const cellContent = gamesForSlot.map(game => `
-								<td style="vertical-align: top; text-align: center;"
-								<div class="game-row" 
-									data-game-id="${game.id}" 
-									onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
-									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
-									<strong>${game.court}</strong><br>
-									${game.teamA} vs ${game.teamB}
-									<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
-								</div>
-								</td>
-							`).join('');
 
-							<!-- tableHTML += `<td style="vertical-align: top;">${cellContent}</td>`; -->
-							tableHTML += `${cellContent}</tr><tr>`;
-
-						} else {
-							// Empty cell
-							tableHTML += `<td></td>`;
+						if (debug) {
+							console.log(`time-slot=${time24}  gamesForSlot.length=${gamesForSlot.length}`);
 						}
-					});
-						
-					tableHTML += `</tr></tbody>`;
+
+						// Prepare court buckets
+						let court1Game = null;
+						let court2Game = null;
+
+						gamesForSlot.forEach(game => {
+							if (game.court === "Court 1" || game.court === "1") {
+								court1Game = game;
+							} else if (game.court === "Court 2" || game.court === "2") {
+								court2Game = game;
+							}
+						});
+
+					  if (court1Game != null || court2Game != null ) {
+						// Time column
+						tableHTML += `<td style="text-align: center;">${time24}</td>`;		
+						// Render Court 1 cell						
+						if (court1Game) {
+							tableHTML += `
+								<td style="vertical-align: top; text-align: center;">
+									<div class="game-row"
+										data-game-id="${court1Game.id}"
+										onclick='showTeamAt(event, "${court1Game.teamA}", "${court1Game.teamB}", ${court1Game.id})'
+										style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+										<!--<strong>Court 1</strong><br>-->
+										${formatTeamName(court1Game.teamA, court1Game.teamB, date)}
+										<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
+									</div>
+								</td>`;
+						} else {
+							tableHTML += `<td>&nbsp;</td>`;
+						}
+
+						// Render Court 2 cell
+						if (court2Game) {
+							tableHTML += `
+								<td style="vertical-align: top; text-align: center;">
+									<div class="game-row"
+										data-game-id="${court2Game.id}"
+										onclick='showTeamAt(event, "${court2Game.teamA}", "${court2Game.teamB}", ${court2Game.id})'
+										style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
+										<!--<strong>Court 2</strong><br>-->
+										${formatTeamName(court2Game.teamA, court2Game.teamB, date)}
+										<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
+									</div>
+								</td>`;
+						} else {
+							tableHTML += `<td>&nbsp;</td>`;
+						}
+
+						// End row + start next
+						tableHTML += `</tr><tr>`;
+					  }
+					});				    
 				});
+				
 			}		
             
             tableHTML += '</tbody></table>';
@@ -1061,6 +1152,7 @@ function enableToggleButton() {
         function filterSchedule() {
             const filterValue = document.getElementById('teamFilter').value;
             filteredGames = games;
+
 			
             //filteredGames = games.filter(game => 
             //        game.date >= currentDate
@@ -1071,18 +1163,8 @@ function enableToggleButton() {
                     game.teamA === filterValue || game.teamB === filterValue
                 );
             }
-			
+			console.log(filteredGames);			
             renderSchedule(filteredGames);
-			const positionDate = getLastWeek(winnerWeeks);
-			setTimeout(() => {
-				const row = document.getElementById(`${positionDate}`);
-				if (row) row.scrollIntoView({ behavior: "smooth" });
-			}, 50);
-
-			//document.getElementById("row2026105").scrollIntoView();
-			//const wrapper = document.getElementById("scrollArea");
-			//const row = document.getElementById("row20261105");
-			//wrapper.scrollTop = row.offsetTop;
             selectGame(null);
 			console.log(`FilterSchedule: filterValue(${filterValue})`); // Debug output
             if (filterValue === "") {
@@ -1091,20 +1173,6 @@ function enableToggleButton() {
                 downloadBtn.disabled = false;
             }			
         }
-
-		function getLastWeek(weeks) {
-			return "row" + weeks.reduce((max, row) => {
-				return row[0] > max ? row[0] : max;
-			}, "00000000");
-			//let latest = weeks.reduce((max, row) => {
-			//	return row[0] > max ? row[0] : max;
-			//}, "00000000");
-			//let rowId = "row" + latest;
-
-			//console.log("Latest row ID:", rowId);
-			//return rowId;
-		}
-
 
         // *** 4. Row Selection Logic ***
         
@@ -1327,13 +1395,7 @@ END:VCALENDAR`;
 		downloadICS(icsContent);
 	});
 
-	console.log("Calling Load Functions...");
-	loadTeams();
-	loadAndRender();
-	console.log(`Loading ${fileSchedule}`);
-	tryLoadFile(fileSchedule);
-
-    </script>
+</script>
 
 </body>
 </html>

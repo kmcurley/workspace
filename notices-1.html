@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Notices Display</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .notice {
+            background: #f8f8d8;
+            border-left: 5px solid #c9a800;
+            padding: 12px 16px;
+            margin-bottom: 15px;
+        }
+        .notice p { margin: 4px 0; }
+		.first-line {
+			font-weight: bold;
+			color: red;
+			font-size: 18px;
+		}
+    </style>
+</head>
+<body>
+<h4 id="hdr-notices" style="display:none; background-color: blue; border-radius: 5px; color: white; text-align: center; font-size: 26px;">NOTICES</h4>
+<div id="noticeContainer"></div>
+
+<script>
+// -------------------------------
+// Notice Data
+// -------------------------------
+const notices = [
+    {
+        start: "2026-11-01",
+        end:   "2026-11-19",
+        lines: [
+            	"Notice of Special Assessment Board Meeting","Date: Thursday, Nov 19, 2026","Time: 6:30 PM Eastern Time (US and Canada)","Location: Avalon Ballroom"
+        ],
+		action: [
+			[
+			"https://avalon-estates.com/editor_upload/File/BOD%20Meetings/BOD%20Meeting%20Agendas/2026/2026-11-19%20SA%2014%20Day%20Notice.pdf",
+			"Click here to Review/Print the 14-Day Notice of Proposed Special Assessment - 1 Page"
+			]
+		]	
+    },
+    {
+        start: "2026-12-01",
+        end:   "2026-12-14",
+        lines: [
+            	"BOD Board Meeting","Date: Thursday, Dec 14, 2026","Time: 6:30 PM Eastern Time (US and Canada)","Location: Avalon Ballroom"
+        ],	
+    },	
+    {
+        start: "2026-11-10",
+        end:   "2026-11-13",
+        lines: [
+            "Courts closed for maintenance June 12–14.",
+            "Check schedule for updates."
+        ]
+    },
+    {
+        start: "2026-11-01",
+        end:   "2026-11-04",
+        lines: [
+            "Holiday weekend schedule in effect.",
+            "Limited court availability."
+        ]
+    }
+];
+
+// -------------------------------
+// Display Logic
+// -------------------------------
+function showNotices() {
+    const container = document.getElementById("noticeContainer");
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    notices.forEach(n => {
+        if (today >= n.start && today <= n.end) {
+			document.getElementById("hdr-notices").style.display = "block";		
+            const div = document.createElement("div");
+            div.className = "notice";
+			// Process the lines first
+			n.lines.forEach((line, index) => {
+				const p = document.createElement("p");
+				p.textContent = line;
+
+				if (index === 0) { p.classList.add("first-line");}
+
+				div.appendChild(p);
+			});
+
+			// Process actions after all lines
+			if (n.action) {
+				n.action.forEach(action => {
+					const p = document.createElement("p");
+					const a = document.createElement("a");
+
+					a.href = action[0];       // URL
+					a.textContent = action[1]; // Display text
+					a.target = "_blank";
+
+					p.appendChild(a);
+					div.appendChild(p);
+				});
+			}		
+
+            container.appendChild(div);
+        }
+    });
+}
+
+showNotices();
+</script>
+
+</body>
+</html>

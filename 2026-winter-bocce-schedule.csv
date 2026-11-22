@@ -23,14 +23,14 @@ G21:  Team 8,Team 15,2026-11-12,09:30:00 AM,Court 1
 G22:  Team 5,Team 10,2026-11-12,09:30:00 AM,Court 2
 G23:  Team 13,Team 16,2026-11-12,10:15:00 AM,Court 1
 G24:  Team 12,Team 7,2026-11-12,10:15:00 AM,Court 2
-G25:  Loser G17,Loser G18 ,2026-11-19,08:00:00 AM,Court 1
-G26:  Loser G21,Winner G19 ,2026-11-19,08:00:00 AM,Court 2
-G27:  Loser G22,Winner G21 ,2026-11-19,08:45:00 AM,Court 1
-G28:  Winner G20,Winner G22 ,2026-11-19,08:45:00 AM,Court 2
-G29:  Winner G23,Winner G24 ,2026-11-19,09:30:00 AM,Court 1
-G30:  Loser G19,Loser G20 ,2026-11-19,09:30:00 AM,Court 2
-G31:  Winner G17,Winner G18 ,2026-11-19,10:15:00 AM,Court 1
-G32:  Loser G23,Loser G24 ,2026-11-19,10:15:00 AM,Court 2
+G25:  Team 1,Team 14,2026-11-19,08:00:00 AM,Court 1
+G26:  Team 15,Team 11,2026-11-19,08:00:00 AM,Court 2
+G27:  Team 10,Team 8,2026-11-19,08:45:00 AM,Court 1
+G28:  Team 2,Team 5,2026-11-19,08:45:00 AM,Court 2
+G29:  Team 13,Team 12,2026-11-19,09:30:00 AM,Court 1
+G30:  Team 4,Team 9,2026-11-19,09:30:00 AM,Court 2
+G31:  Team 6,Team 3,2026-11-19,10:15:00 AM,Court 1
+G32:  Team 16,Team 7,2026-11-19,10:15:00 AM,Court 2
 Team 11,Team 6,2026-12-03,08:00:00 AM,Court 1
 Team 9,Team 8,2026-12-03,08:00:00 AM,Court 2
 Team 14,Team 3,2026-12-03,08:45:00 AM,Court 1

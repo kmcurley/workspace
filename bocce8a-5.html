@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="This page provides a dynamic team viewer with modal popups and interactive roster display. It read JSON and CSV files.">
-	<link rel="icon" type="image/png" href="avalon-bocce-icon-80x80.jpg">
+	<link rel="icon" type="image/png" href="avalon-bocce-icon-80x80.jpg" onclick="specialPrint()">
     <title>Avalon Estates Bocce Schedule</title>
     <style>
 
@@ -185,7 +185,7 @@
 
 	<div id="bocce-standings-container"></div>
 
-    <div class="controls">
+    <div class="controls" id="all-controls">
         <div id="inputContainer" style="display: none;">
 			<label for="csvFile">**Select CSV File (Team A, Team B, Date, Time, Court):**</label>
 			<input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload()">
@@ -205,7 +205,7 @@
 			<div id="controlBtns">
 				<button onclick="window.print()">Print Schedule</button>&nbsp;&nbsp;
 				<!-- <button onclick="printSchedule()">Print Schedule</button>&nbsp;&nbsp; -->			
-				<button id="toggleControlsBtn">Hide Standings</button>			
+				<button id="toggleControlsBtn">Hide Standings</button>
 			</div>
         </div>
     </div>
@@ -636,7 +636,11 @@
       table.appendChild(teamRow);
 	  // Footer row
       const footerRow = document.createElement('tr');
-      footerRow.appendChild(createCell(' '));
+      //footerRow.appendChild(createCell(' '));
+	  const column1 = document.createElement('td');
+	  column1.onclick = () => specialPrint(); // added specialPrint onclick 
+	  column1.textContent = ' ';
+	  footerRow.appendChild(column1);
       const footerCell = document.createElement('td');
       footerCell.colSpan = numTeams;
       footerCell.className = 'bold';
@@ -851,6 +855,13 @@
 			const content = document.getElementById('modalContent');
 			positionModal(event, content);
 			//modal.style.display = 'block';
+		}
+		
+		function specialPrint() {
+			const section = document.getElementById("all-controls");
+			section.style.display = "none"; // hide all controls
+			printSchedule();
+			section.style.display = "block";  // unhide controls
 		}
 
 		function printSchedule() {

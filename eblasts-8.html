@@ -13,7 +13,15 @@
   .filters input { padding: 6px; margin-right: 10px; }
   #count { font-weight: bold; margin-bottom: 10px; }
   .navbtn{padding:6px 12px;margin-right:10px;background:#e0e0e0;border:1px solid #888;cursor:pointer;font-family:Arial;}
-  #nav{margin-bottom:15px;font-family:Arial;}
+  #nav{margin-bottom:15px;font-family:Arial;flex-shrink:0}
+
+	#content {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		padding: 10px;
+		border: 1px solid #ccc;
+	}
 </style>
 </head>
 <body>

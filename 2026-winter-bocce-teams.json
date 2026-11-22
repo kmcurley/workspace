@@ -22,6 +22,7 @@
 		"team": 3,
 		"members": [
 		  "Hank Greenberg",
+		  "Carol Haft",
 		  "Joan Hasluck (C)",
 		  "Lois Lubell"
 		]
@@ -57,6 +58,7 @@
 		"team": 7,
 		"members": [
 		  "Cindy Curley",
+		  "Gary ?",
 		  "Glenn Haft (C)",
 		  "Burt Klein",
 		  "Elaine Leeds"
@@ -68,7 +70,8 @@
 		  "Ed Fishman (C)",
 		  "Nikki Grabisch",
 		  "Ron Holzman",
-		  "Maria Murray"
+		  "Maria Murray",
+		  "Stephanie Pessenda"
 		]
 	  },
 	  {
@@ -120,6 +123,7 @@
 		"team": 14,
 		"members": [
 		  "Steven Askinas (C)",
+		  "Stan Einhorn",
 		  "Roberta Gabler",
 		  "Stu Grodin",
 		  "Joan Madonna"
@@ -132,15 +136,6 @@
 		  "Stephanie Klein",
 		  "Myra Slomiak (C)",
 		  "Jeffrey Wachs"
-		]
-	  },
-	  {
-		"team": 16,
-		"members": [
-		  "Stan Einhorn",
-		  "Salma Facio",
-		  "Carol Haft",
-		  "Stephanie Pessenda (C)"
 		]
 	  }
 	]

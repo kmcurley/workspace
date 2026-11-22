@@ -1,0 +1,104 @@
+{
+  "teams": [
+		  {
+			"teamnumber": 1,
+			"team": "Avalon Estates",
+			"members": ["Steve Askinas"],
+			"Mobile1": "631-290-9356",
+			"email1": "STEVEN.ASKINAS@GMAIL.COM",
+			"Captain2": "Glen Hoeft",
+			"Mobile2": "954-562-7777",
+			"email2": ""
+		  },
+		  {
+			"teamnumber": 3,
+			"team": "Huntington Lakes",
+			"members": ["Rodney Stanger"],
+			"Mobile1": "516-445-6492",
+			"email1": "RODNEYSTANGER@YAHOO.COM",
+			"Captain2": "Jerry Wasserman",
+			"Mobile2": "847-208-9350",
+			"email2": ""
+		  },
+		  {
+			"teamnumber": 4,
+			"team": "Polo Trace",
+			"members": ["Richard Forgione"],
+			"Mobile1": "917-952-4124",
+			"email1": "RICHARDVFORGIONEV@GMAIL.COM",
+			"Captain2": "Steph Greenberg",
+			"Mobile2": "516-297-8916",
+			"email2": ""
+		  },
+		  {
+			"teamnumber": 5,
+			"team": "Valencia Bay",
+			"members": ["Keith Rosen"],
+			"Mobile1": "954-610-2595",
+			"email1": "KROSEN55@GMAIL.COM",
+			"Captain2": "Bruce Wulwick",
+			"Mobile2": "646-831-3200",
+			"email2": "BWULWICK@THESETUPGROUP.COM"
+		  },
+		  {
+			"teamnumber": 6,
+			"team": "Valencia Cove",
+			"members": ["Philip Schlissel"],
+			"Mobile1": "203-494-6874",
+			"email1": "PLSCHLISSEL@GMAIL.COM",
+			"Captain2": "Debbi McClure",
+			"Mobile2": "678-427-5100",
+			"email2": "DGMCCLURE4503@GMAIL.COM"
+		  },
+		  {
+			"teamnumber": 7,
+			"team": "Valencia Falls",
+			"members": ["Abe Bader"],
+			"Mobile1": "516-993-5414",
+			"email1": "ABEB2305@GMAIL.COM",
+			"Captain2": "Larry Silver",
+			"Mobile2": "561-908-2644",
+			"email2": "AGSTREAK108@GMAIL.COM"
+		  },
+		  {
+			"teamnumber": 8,
+			"team": "Valencia Pointe",
+			"members": ["Richard McCluskey"],
+			"Mobile1": "301-908-7704",
+			"email1": "RMACKBIKE@MSN.COM",
+			"Captain2": "",
+			"Mobile2": "",
+			"email2": ""
+		  },
+		  {
+			"teamnumber": 9,
+			"team": "Valencia Grand",
+			"members": ["Mike Lefkowitz"],
+			"Mobile1": "215-817-5702",
+			"email1": "MICHAEL@BENJAMINROSSGROUP.COM",
+			"Captain2": "",
+			"Mobile2": "",
+			"email2": ""
+		  },
+		  {
+			"teamnumber": 10,
+			"team": "Valencia Palms",
+			"members": ["Jerry Avergon"],
+			"Mobile1": "908-247-2774",
+			"email1": "JAVERGON@AOL.COM",
+			"Captain2": "",
+			"Mobile2": "",
+			"email2": ""
+		  },
+		  {
+			"teamnumber": 11,
+			"team": "Valencia Lakes",
+			"members": ["Jim Champlain"],
+			"Mobile1": "516-697-2565",
+			"email1": "JAMESECHAMPLIN@GMAIL.COM",
+			"Captain2": "Darryl Gelfand",
+			"Mobile2": "516-729-8880",
+			"email2": "DARRYL@GMAIL.COM"
+		  }
+		]
+}

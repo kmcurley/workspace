@@ -989,7 +989,8 @@
 
 			// Filter only real team labels
 			const filtered = uniqueTeams.filter(team =>
-				team.includes("Team") && !team.includes(":")
+				//team includes("Team") && !team.includes(":")
+				!team.includes(":")
 			);
 
 			// Sort numerically by the team number

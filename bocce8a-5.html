@@ -142,6 +142,10 @@
 		@media print {
 		  #controls { display: none; }
 		  .team-box { width: 100%; margin-bottom: 20px; }
+			* {
+				-webkit-print-color-adjust: exact !important;
+				print-color-adjust: exact !important;
+			}
 		}
 		#downloadBtns {
 		  background: #f3f3f3;
@@ -177,7 +181,6 @@
     <h1 style="display: flex; align-items: center; gap: 10px;">
 		<img src="avalon-bocce-icon-80x80.jpg" alt="Avalon Bocce Icon" style="height: 80px;">
 		<span id="titleText">Bocce Schedule and Standings</span>
-</h1>
 	</h1>
 
 	<div id="bocce-standings-container"></div>
@@ -186,8 +189,7 @@
         <div id="inputContainer" style="display: none;">
 			<label for="csvFile">**Select CSV File (Team A, Team B, Date, Time, Court):**</label>
 			<input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload()">
-        </div>	
-        
+        </div>
         <div id="scheduleContainer" style="display: none;">
             <label for="teamFilter">Filter by Team:&nbsp;&nbsp;</label>
             <select id="teamFilter" onchange="filterSchedule()">
@@ -233,7 +235,8 @@
     // Global variables to hold the parsed data
 	game = '';
     let games = [];
-	filteredGames = [];
+	let filteredGames = [];
+	let selectedTeams = [];
     let selectedGameId = null;
     let gameCounter = 1; 
 	let teamData = [];
@@ -246,6 +249,54 @@
 	const winnerLoserTab = [];
 	winnerLoserTab['Winner G0'] = "Team 0";
 	let winnerWeeks = [];
+	let doubles = false;
+	let viewTeamRoster = "";
+	let versus = " vs ";
+	let backgroundColors = [
+	  "       ", // no color
+	  "#FFD6D6", // light red 1
+	  "#B3E5FC", // light blue 2	  
+	  "#FFE0B2", // light orange 3
+	  "#FFF59D", // light yellow 4
+	  "#C8E6C9", // light green 5
+	  "#B2DFDB", // light teal 6
+	  "#F8BBD0", // pink	   7
+	  "#FCE4EC", // light rose 8
+	  "#D1C4E9", // lavender 9
+	  "#E1BEE7", // light purple 10
+	  "#D7CCC8", // tan 11
+	  "#CFD8DC", // blue gray 12
+	  "orange",  // orange 13
+	  "#DCEDC8", // lime 14
+	  "#FFCCBC", // coral 15
+	  "#FFE699", // gold 16
+	  "#C5CAE9", // periwinkle 17	
+	  "#D9EAD3", // sage 18
+	  "#BBDEFB", // cornflower blue 19	
+	  "#B2EBF2"  // aqua 20
+	];	
+	let categoryColors = [
+	  "       ", // no color	
+	  "#FFB3BA",
+	  "#FFDFBA",
+	  "#FFFFBA",
+	  "#BAFFC9",
+	  "#BAE1FF",
+	  "#D4C1EC",
+	  "#F4C2C2",
+	  "#FFD8A8",
+	  "#C7F9CC",
+	  "#A9DEF9",
+	  "#E4C1F9",
+	  "#FCF6BD",
+	  "#CDEAC0",
+	  "#A0C4FF",
+	  "#FFC6FF",
+	  "#9BF6FF"
+	];
+	let colors = Array.from({ length: 20 }, (_, i) =>
+	  `hsl(${i * 22.5}, 70%, 80%)`
+	);
 	
 	console.log(`currentDate=${currentDate}`);
 	
@@ -261,7 +312,7 @@
 	console.log(`params=${params}`);
 	const league = params.get("league");
 	console.log(`league=${league}`);
-	filePrefix="2026-summer";
+	filePrefix="2026-winter";
 	if (league) {
 		filePrefix=league;   // your function
 		console.log(`filePrefix=${filePrefix}`);
@@ -282,7 +333,19 @@
 			tableStyle="2";
 			console.log(`Passed tstyle invalid: "${tstyle}".  tableStyle set to "1"`);
 		}	
-	} 
+	}
+	
+	if ( filePrefix.includes("doubles") ) { 
+		console.log("in doubles section");
+		doubles = true; 
+		viewTeamRoster = "showDoublesTeamAt";
+		versus = "<br>vs<br>";
+	  } else {
+		doubles = false; 
+		viewTeamRoster = "showTeamAt";
+		versus = " vs ";
+	};
+	console.log(`filePrefix=${filePrefix}  viewTeamRoster=${viewTeamRoster}`);
 	
 	// SET FILANAME VARIABLES
 	fileStandings=`${filePrefix}-bocce-standings.json`;
@@ -316,7 +379,7 @@
 		`Member 2`       // Second member
 		]
 	  });
-	}	
+	}
 	
 	// SETUP HIDE AND SHOW FUNCTION FOR TEAM STANDINGS BAR GRAPH
 	document.getElementById("toggleControlsBtn").addEventListener("click", function () {
@@ -492,13 +555,13 @@
 
     // Function to total wins and set globals
     function calculateTeamWins(weeks) {
-      const wins = Array(16).fill(0);
+      const wins = Array(teamData.length).fill(0);
 
       // Loop through each week
       weeks.forEach(week => {
         for (let i = 1; i < week.length; i++) {
           const teamNumber = week[i];
-          if (teamNumber >= 1 && teamNumber <= 16) {
+          if (teamNumber >= 1 && teamNumber <= wins.length) {
             wins[teamNumber - 1]++;
           }
         }
@@ -638,7 +701,63 @@
 			modalContent.style.top = `${y}px`;
 			modalContent.style.zIndex = 1000;
 		}
-	
+
+		function showDoublesTeamAt(event, team1, team2, gameId) {
+			if (gameId !== null) {
+			  selectGame(gameId);
+			};
+			const team1Array = team1.trim().split(" & ");
+			const team2Array = team2.trim().split(" & ");
+			let maxEntries = 0;
+			const tableBody = document.querySelector('#teamTable tbody');
+			tableBody.innerHTML = ' '; // Clear previous rows
+
+			for (i=0; i < 2; i++ ) {
+				const header = document.createElement('tr');
+				// column 1 header
+				const teamA = getTeamObject(team1Array[i], teamData)
+				const col1 = document.createElement('th');
+				col1.textContent = `Team ${teamA.team}`;
+				header.appendChild(col1);
+				// column 2 header
+				const teamB = getTeamObject(team2Array[i], teamData)
+				const col2 = document.createElement('th');
+				col2.textContent = `Team ${teamB.team}`;
+				header.appendChild(col2);
+				tableBody.appendChild(header);
+				
+				const maxEntries = Math.max(teamA.members.length, teamB.members.length);  
+				for (t=0; t < maxEntries; t++) {
+					const row = document.createElement('tr');
+
+					const column1 = document.createElement('td');
+					if (t+1 > teamA.members.length ) {
+						column1.textContent = " ";
+					  } else {
+						column1.textContent = teamA.members[t];
+					};
+					row.appendChild(column1);
+				
+					const column2 = document.createElement('td');
+					if (t+1 > teamB.members.length ) {
+						column2.textContent = " ";
+					  } else {
+						column2.textContent = teamB.members[t];
+					};
+					row.appendChild(column2);
+				
+					tableBody.appendChild(row);
+				};
+			};
+
+			document.getElementById('teamModal').style.display = 'block';
+			
+			// Position and show
+			const content = document.getElementById('modalContent');
+			positionModal(event, content);
+			//modal.style.display = 'block';
+		}
+
 		function showTeamAt(event, team1, team2, gameId) {
 			if (gameId !== null) {
 			  selectGame(gameId);
@@ -732,7 +851,7 @@
 			const content = document.getElementById('modalContent');
 			positionModal(event, content);
 			//modal.style.display = 'block';
-		}	
+		}
 
 		function printSchedule() {
 			const section = document.getElementById("bocce-standings-container");
@@ -744,7 +863,7 @@
 			};
 			// Trigger print dialog
 			window.print();
-		}	
+		}
 		
         // *** 1. CSV File Handling & Time Conversion ***
 
@@ -837,10 +956,21 @@
         
         function getUniqueTeams() {
             const teams = new Set();
-            games.forEach(game => {
-                teams.add(game.teamA);
-                teams.add(game.teamB);
-            });
+			if ( doubles ) {
+				games.forEach(game => {
+					const aTeams = game.teamA.split("&");
+					teams.add(aTeams[0].trim());
+					teams.add(aTeams[1].trim());
+					const bTeams = game.teamB.split("&");
+					teams.add(bTeams[0].trim());
+					teams.add(bTeams[1].trim());
+				});				 
+			  } else {
+				games.forEach(game => {
+					teams.add(game.teamA);
+					teams.add(game.teamB);
+				});
+			}
             return Array.from(teams).sort();
         }
         
@@ -886,15 +1016,18 @@
 
 			// Otherwise return the original value (like "Team 7")
 			return ref;
-		}	
+		}
 		
 		function formatTeamName(teamA, teamB, date) {
+			//console.log(`formatTeamName: teamA=(${teamA})  teamB=(${teamB})`);
+			let useColor = false;		
 			let debug = false;
 			let gameNum = null;
 			let gameNumView = null;
 			let html = " ";
 			let teamParts = [];
 			let newTeamA, newTeamB, newTeamAName = 'Team 99';
+			let teamAColor = teamBColor = "";
 			const searchDate = date.replaceAll("-", "");
 			
 			// remove game number from TeamA "G1: Team 6" and save to define 
@@ -910,48 +1043,93 @@
 				gameNum = "";
 				gameNumView = "";
 			}
-			if (debug) {console.log(`newTeamAName=${newTeamAName}  teamB=${teamB}`)};
+			if (debug) {console.log(`newTeamAName=(${newTeamAName})  teamB=(${teamB})`)};
 			newTeamA = resolveTeam(newTeamAName, winnerLoserTab);
 			newTeamB = resolveTeam(teamB, winnerLoserTab);
-			if (debug) {console.log(`newTeamA=${newTeamA}  newTeamB=${newTeamB}`)};
-			// I played with two choices for denoting a team that won the match
-			// 1. <span class="checkmark">✓</span>${newTeamA}
-			// 2. <span class="circleTeam">${newTeamA}</span>
-			//
+			if (debug) {console.log(`newTeamA=(${newTeamA})  newTeamB=(${newTeamB})`)};
+
 			// Extract numeric team number from "Team 02"
 			let teamANum = parseInt(newTeamA.replace("Team ", ""), 10);
 			let teamBNum = parseInt(newTeamB.replace("Team ", ""), 10);
-			
+			//console.log(`formatTeamName: selectedTeams=(${selectedTeams})`);
+			//console.log(`formatTeamName: newTeamA=(${newTeamA})  newTeamB=(${newTeamB})`);
+			if (useColor) {
+				if (doubles) {
+					const teamAArray = newTeamA.trim().split(" & ");
+					num = 0;
+					switch (true) {
+						case selectedTeams.includes(teamAArray[0]):
+							num = parseInt(teamAArray[0].replace("Team ", ""), 10);
+							teamAColor = ` style="background-color: ${backgroundColors[num]}" `;
+						break;
+						case selectedTeams.includes(teamAArray[1]):
+							num = parseInt(teamAArray[1].replace("Team ", ""), 10);
+							teamAColor = ` style="background-color: ${backgroundColors[num]}" `;
+						break;
+						default:
+							teamAColor = "";
+					}
+					const teamBArray = newTeamB.trim().split(" & ");
+					switch (true) {
+						case selectedTeams.includes(teamBArray[0]):
+							num = parseInt(teamBArray[0].replace("Team ", ""), 10);
+							teamBColor = ` style="background-color: ${backgroundColors[num]}" `;
+						break;
+						case selectedTeams.includes(teamBArray[1]):
+							num = parseInt(teamBArray[1].replace("Team ", ""), 10);
+							teamBColor = ` style="background-color: ${backgroundColors[num]}" `;
+						break;
+						default:
+							teamBColor = "";
+					}							
+				  }  else {
+					if (selectedTeams.includes(newTeamA) ) { 
+						teamAColor = ` style="background-color: ${backgroundColors[teamANum]}" `;
+					  } else {
+						teamAColor = "";
+					}	
+					if (selectedTeams.includes(newTeamB) ) { 
+						teamBColor = ` style="background-color: ${backgroundColors[teamBNum]}" `;
+					  } else {
+						teamBColor = "";
+					}
+				}
+			}
+			//console.log(`formatTeamName: teamAColor=(${teamAColor})  teamBColor=(${teamBColor})`);
 			let week = winnerWeeks.find(arr => arr[0] === searchDate);
 			if (debug) {console.log(week)};
-			html = `<strong>${gameNumView}</strong>${newTeamA} vs ${newTeamB}`; 
+			html = `<strong>${gameNumView}</strong><span ${teamAColor} >${newTeamA}</span>${versus}<span ${teamBColor} >${newTeamB}</span>`; 
+			//html = `<strong>${gameNumView}</strong>${newTeamA}${versus}${newTeamB}`; 
 			if (week) {
 				if (week.slice(1).includes(teamANum)) {
 					winnerLoserTab[`Winner ${gameNum}`] = newTeamA;
 					winnerLoserTab[`Loser ${gameNum}`] = newTeamB;
-					html = `<strong>${gameNumView}</strong><span class="circleTeam">${newTeamA}</span>vs ${newTeamB}`;
+					html = `<strong>${gameNumView}</strong><span ${teamAColor} class="circleTeam">${newTeamA}</span>${versus}<span ${teamBColor} >${newTeamB}</span>`;
+					//html = `<strong>${gameNumView}</strong><span class="circleTeam">${newTeamA}</span>${versus}${newTeamB}`;
 				  } else if (week.slice(1).includes(teamBNum)) {	
 					winnerLoserTab[`Loser ${gameNum}`] = newTeamA;
 					winnerLoserTab[`Winner ${gameNum}`] = newTeamB;
-					html = `<strong>${gameNumView}</strong>${newTeamA} vs <span class="circleTeam">${newTeamB}</span>`;
+					html = `<strong>${gameNumView}</strong><span ${teamAColor} >${newTeamA}</span>${versus}<span ${teamBColor} class="circleTeam">${newTeamB}</span>`;
+					//html = `<strong>${gameNumView}</strong>${newTeamA}${versus}<span class="circleTeam">${newTeamB}</span>`;
 				  } else {
-					html = `<strong>${gameNumView}</strong>${newTeamA} vs ${newTeamB}`;
+					html = `<strong>${gameNumView}</strong><span ${teamAColor} >${newTeamA}</span>${versus}<span ${teamBColor} >${newTeamB}</span>`;
+					//html = `<strong>${gameNumView}</strong>${newTeamA}${versus}${newTeamB}`;
 				}
 			}
 		if ( "1" === "2" ) {
 			if (week && week.slice(1).includes(teamANum)) {
 				if ( gameNum != null) { 
 					//winnerLoserTab[`Winner ${gameNum}`] = newTeamA;
-					html = `<strong>${gameNum}</strong>: <span class="circleTeam">${newTeamA}</span>vs `;
+					html = `<strong>${gameNum}</strong>: <span class="circleTeam">${newTeamA}</span>${versus}`;
 				  } else {	
 					html = `<span class="circleTeam">${newTeamA}</span>vs `;
 				}	
 			  } else {
 				if ( gameNum != null) { 
 					//winnerLoserTab[`Loser ${gameNum}`] = newTeamA;
-					html = `<strong>${gameNum}</strong>: ${newTeamA} vs `;
+					html = `<strong>${gameNum}</strong>: ${newTeamA}${versus}`;
 				  } else {	
-					html = `${newTeamA} vs `;
+					html = `${newTeamA}${versus}`;
 				}	
 			}
 			if (week && week.slice(1).includes(teamBNum)) {
@@ -978,7 +1156,7 @@
         // ** PIVOT TABLE RENDERING LOGIC **
         // ----------------------------------------------------------------------
         function renderSchedule(data) {
-			const debug = true;
+			const debug = false;
             const tableDisplay = document.getElementById('tableDisplay');
             
             if (data.length === 0) {
@@ -992,7 +1170,9 @@
             const timeMap = {}; 
             uniqueTime24.forEach(t24 => {
                 const game = data.find(g => g.time24 === t24);
-                if (game) timeMap[t24] = game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "");
+                if (game) {
+					timeMap[t24] = game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "");
+				}
             });
 
 
@@ -1031,7 +1211,7 @@
 							const cellContent = gamesForSlot.map(game => `
 								<div class="game-row" 
 									data-game-id="${game.id}" 
-									onclick='showTeamAt(event, "${game.teamA}", "${game.teamB}", ${game.id})'
+									onclick='${viewTeamRoster}(event, "${game.teamA}", "${game.teamB}", ${game.id})'
 									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
 									<strong>${game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "")}</strong> @ 
 									<strong>${game.court}</strong><br>
@@ -1054,7 +1234,6 @@
 			  } else {
 				// 3. Build the HTML Table
 				const filterValue = document.getElementById('teamFilter').value;
-				console.log(`filterValue=${filterValue}`);
 				tableHTML = `
 					<table>
 						<thead>
@@ -1091,14 +1270,16 @@
 
 					  if (court1Game != null || court2Game != null ) {
 						// Time column
-						tableHTML += `<td style="text-align: center;">${time24}</td>`;		
+						tableHTML += `<td style="text-align: center;">`;
+						//tableHTML += `${time24}</td>`;
+						tableHTML += `${court1Game.time12.replace(/^0?(\d{1,2}:\d{2}):\d{2}\s*([AP]M)$/i, "$1 $2")}</td>`;		
 						// Render Court 1 cell						
 						if (court1Game) {
 							tableHTML += `
 								<td style="vertical-align: top; text-align: center;">
 									<div class="game-row"
 										data-game-id="${court1Game.id}"
-										onclick='showTeamAt(event, "${court1Game.teamA}", "${court1Game.teamB}", ${court1Game.id})'
+										onclick='${viewTeamRoster}(event, "${court1Game.teamA}", "${court1Game.teamB}", ${court1Game.id})'
 										style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
 										<!--<strong>Court 1</strong><br>-->
 										${formatTeamName(court1Game.teamA, court1Game.teamB, date)}
@@ -1115,7 +1296,7 @@
 								<td style="vertical-align: top; text-align: center;">
 									<div class="game-row"
 										data-game-id="${court2Game.id}"
-										onclick='showTeamAt(event, "${court2Game.teamA}", "${court2Game.teamB}", ${court2Game.id})'
+										onclick='${viewTeamRoster}(event, "${court2Game.teamA}", "${court2Game.teamB}", ${court2Game.id})'
 										style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
 										<!--<strong>Court 2</strong><br>-->
 										${formatTeamName(court2Game.teamA, court2Game.teamB, date)}
@@ -1157,13 +1338,19 @@
             //filteredGames = games.filter(game => 
             //        game.date >= currentDate
             //    );
-
+			selectedTeams[0] = filterValue;
             if (filterValue) {
+			  if ( !doubles ) {
                 filteredGames = games.filter(game => 
                     game.teamA === filterValue || game.teamB === filterValue
                 );
+			   } else {
+				filteredGames = games.filter(game => 
+                    game.teamA.split(" & ").includes(filterValue) || game.teamB.split(" & ").includes(filterValue)
+				);	
+			  }		
             }
-			console.log(filteredGames);			
+			//console.log(filteredGames);			
             renderSchedule(filteredGames);
             selectGame(null);
 			console.log(`FilterSchedule: filterValue(${filterValue})`); // Debug output

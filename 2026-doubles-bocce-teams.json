@@ -1,0 +1,46 @@
+{
+  "teams": [
+		{ "team": 1, 	 "members": [ "Joan Hasluck", "Lloyd Hasluck" ]  },
+			
+		{ "team": 2, 	 "members": [ "Pam Holtzman", "Ron Holtzman" ]  },
+			
+		{ "team": 3, 	 "members": [ "Fredda Nogid", "Ron Nogid" ]  },
+			
+		{ "team": 4, 	 "members": [ "Roberta Gabler", "David Argenzio" ]  },
+			
+		{ "team": 5, 	 "members": [ "Alexandra Goodwin", "Craig Goodwin" ]  },
+			
+		{ "team": 6, 	 "members": [ "Eileen Rosen", "Mark Rosen" ]  },
+			
+		{ "team": 7, 	 "members": [ "Ellen White", "Marc Lurie" ]  },
+			
+		{ "team": 8, 	 "members": [ "Carol Haft", "Glen Haft" ]  },
+			
+		{ "team": 9, 	 "members": [ "Cindy Goldstein", "Marshall Goldstein" ]  },
+			
+		{ "team": 10, 	 "members": [ "Debbie Hague", "Doug Hague" ]  },
+			
+		{ "team": 11, 	 "members": [ "Lisa Corso Susca", "Ralph Susca" ]  },
+			
+		{ "team": 12, 	 "members": [ "Robin Giligan", "Jim Giligan" ]  },
+			
+		{ "team": 13, 	 "members": [ "Debbie Bernfeld", "Joe Bernfeld" ]  },
+			
+		{ "team": 14, 	 "members": [ "Brenda Goldstein", "Howard Salzman" ]  },
+			
+		{ "team": 15, 	 "members": [ "Cindy Curley", "Kevin Curley" ]  },
+			
+		{ "team": 16, 	 "members": [ "Alice Tricarico", "Matt Tricarico" ]  },
+			
+		{ "team": 17, 	 "members": [ "Dena Goldberg", "Stephanie Pessenda" ]  },
+			
+		{ "team": 18, 	 "members": [ "Sue Nyman", "Rich Nyman" ]  },
+			
+		{ "team": 19, 	 "members": [ "Ronald Radwin", "Joan Madonna" ]  },
+			
+		{ "team": 20, 	 "members": [ "Charlene Thompson", "Gary Thompson" ]  }
+  ]	
+}  
+
+
+

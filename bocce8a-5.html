@@ -1150,7 +1150,18 @@
 		}
 		return html;	
 	}
+	
+	function convertTime(time24) {
+		const [hours, minutes] = time24.split(":");
+		const date = new Date();
+		date.setHours(hours, minutes, 0);
 
+		return date.toLocaleTimeString("en-US", {
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true
+		});
+	}
 
         // ----------------------------------------------------------------------
         // ** PIVOT TABLE RENDERING LOGIC **
@@ -1213,7 +1224,7 @@
 									data-game-id="${game.id}" 
 									onclick='${viewTeamRoster}(event, "${game.teamA}", "${game.teamB}", ${game.id})'
 									style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;">
-									<strong>${game.time12.replace(/:(\d{2})(?=\s*[AP]M)/i, "")}</strong> @ 
+									<strong>${convertTime(time24)}</strong> @ 
 									<strong>${game.court}</strong><br>
 									${formatTeamName(game.teamA, game.teamB, date)}
 									<div style="font-size: 0.8em; color: #569;">(Click for team roster)</div>
@@ -1271,8 +1282,8 @@
 					  if (court1Game != null || court2Game != null ) {
 						// Time column
 						tableHTML += `<td style="text-align: center;">`;
-						//tableHTML += `${time24}</td>`;
-						tableHTML += `${court1Game.time12.replace(/^0?(\d{1,2}:\d{2}):\d{2}\s*([AP]M)$/i, "$1 $2")}</td>`;		
+						tableHTML += `${convertTime(time24)}</td>`;
+						//bleHTML += `${court1Game.time12.replace(/^0?(\d{1,2}:\d{2}):\d{2}\s*([AP]M)$/i, "$1 $2")}</td>`;		
 						// Render Court 1 cell						
 						if (court1Game) {
 							tableHTML += `
